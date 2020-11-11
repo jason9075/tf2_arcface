@@ -1,6 +1,7 @@
 import pathlib
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.keras.callbacks import ModelCheckpoint
 
 from backend.utils import load_weight
 from loss_func.loss import ArcMarginPenalty
@@ -11,6 +12,7 @@ TRAIN_CLASS_NAMES = np.array([])
 
 TRAIN_DATA_PATH = 'dataset/train/'
 VALID_DATA_PATH = 'dataset/val/'
+EPOCHS = 50
 
 BATCH_SIZE = 32
 
@@ -68,14 +70,17 @@ def main():
     load_weight(model, 'pytorch_pretrained/se_resnet50-ce0d4300.pth', trainable=False, verbose=False)
     model.compile(optimizer="Adam", loss=softmax_loss)
 
+    checkpoint = ModelCheckpoint(
+        'checkpoints/e_{epoch}_b_{batch}.ckpt',
+        save_freq=int(steps_per_epoch * 10), verbose=1,
+        save_weights_only=True)
+
     model.fit(train_main_ds,
-              epochs=1,
+              epochs=EPOCHS,
               steps_per_epoch=steps_per_epoch,
-              # callbacks=callbacks,
+              callbacks=[checkpoint],
               # initial_epoch=epochs - 1)
               )
-
-    print(1)
 
 
 def get_label(file_path):

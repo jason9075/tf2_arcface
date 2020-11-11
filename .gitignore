@@ -125,3 +125,7 @@ dataset/*
 # pretrain models
 pytorch_pretrained/*
 !pytorch_pretrained/.keep
+
+# checkpoint
+checkpoint/*
+!checkpoint/.keep
