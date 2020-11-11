@@ -127,5 +127,5 @@ pytorch_pretrained/*
 !pytorch_pretrained/.keep
 
 # checkpoint
-checkpoint/*
-!checkpoint/.keep
+checkpoints/*
+!checkpoints/.keep

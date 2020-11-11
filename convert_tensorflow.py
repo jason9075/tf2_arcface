@@ -1,21 +1,26 @@
+import os
 import pathlib
 import numpy as np
 import tensorflow as tf
+from dotenv import load_dotenv
+
 from tensorflow.python.keras.callbacks import ModelCheckpoint
 
 from backend.utils import load_weight
 from loss_func.loss import ArcMarginPenalty
 from model.se_resnet50 import create_se_resnet50
 
+load_dotenv()
+
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 TRAIN_CLASS_NAMES = np.array([])
 
-TRAIN_DATA_PATH = 'dataset/train/'
-VALID_DATA_PATH = 'dataset/val/'
-EPOCHS = 50
+TRAIN_DATA_PATH = os.getenv("TRAIN_DATA_PATH")
+VALID_DATA_PATH = os.getenv("VALID_DATA_PATH")
+EPOCHS = os.getenv("EPOCHS")
 IMAGE_SIZE = (112, 112)
 
-BATCH_SIZE = 32
+BATCH_SIZE = os.getenv("BATCH_SIZE")
 
 
 def softmax_loss(y_true, y_pred):
@@ -47,8 +52,6 @@ def create_training_model(input_shape, layers, num_of_class, embedding_size=128,
     else:
         model = tf.keras.Model(inputs=[input_node], outputs=[net])
 
-    model.summary()
-
     return model
 
 
@@ -69,11 +72,14 @@ def main():
     model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], num_of_class, training=True)
 
     load_weight(model, 'pytorch_pretrained/se_resnet50-ce0d4300.pth', trainable=False, verbose=False)
+    model.summary()
+
     model.compile(optimizer="Adam", loss=softmax_loss)
 
     checkpoint = ModelCheckpoint(
-        'checkpoints/e_{epoch}_b_{batch}.ckpt',
+        'checkpoints/e_{epoch}.ckpt',
         save_freq=int(steps_per_epoch * 10), verbose=1,
+        save_best_only=True,
         save_weights_only=True)
 
     model.fit(train_main_ds,
@@ -123,13 +129,6 @@ def prepare_for_training(ds, cache=False, shuffle_buffer_size=2000):
     ds = ds.prefetch(buffer_size=AUTOTUNE)
 
     return ds
-
-
-def dummy():
-    from trident import senet
-    from trident import load_lfw
-    senet.SE_ResNet50(include_top=False, pretrained=True, input_shape=(3, 112, 112)).with_optimizer().with_loss()
-    load_lfw(format='aligned_face', is_paired=False)
 
 
 if __name__ == '__main__':
