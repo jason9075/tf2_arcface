@@ -4,11 +4,12 @@ import tensorflow as tf
 
 class ArcMarginPenalty(tf.keras.layers.Layer):
 
-    def __init__(self, num_classes, margin=0.5, logit_scale=64, **kwargs):
+    def __init__(self, num_classes, margin=0.5, logit_scale=64, embedding_size=128, **kwargs):
         super(ArcMarginPenalty, self).__init__(**kwargs)
         self.num_classes = num_classes
         self.margin = margin
         self.logit_scale = logit_scale
+        self.embedding_size = embedding_size
         self.w = None
         self.cos_m = None
         self.sin_m = None
@@ -17,7 +18,7 @@ class ArcMarginPenalty(tf.keras.layers.Layer):
 
     def build(self, input_shape):
         self.w = self.add_variable(
-            "weights", shape=[128, self.num_classes])
+            "weights", shape=[self.embedding_size, self.num_classes])
         self.cos_m = tf.identity(math.cos(self.margin), name='cos_m')
         self.sin_m = tf.identity(math.sin(self.margin), name='sin_m')
         self.th = tf.identity(math.cos(math.pi - self.margin), name='th')

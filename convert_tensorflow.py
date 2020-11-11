@@ -1,5 +1,4 @@
 import pathlib
-
 import numpy as np
 import tensorflow as tf
 
@@ -25,7 +24,8 @@ def softmax_loss(y_true, y_pred):
     return tf.reduce_mean(ce)
 
 
-def create_training_model(input_shape, layers, num_of_class, training=False, margin=0.5, logit_scale=64):
+def create_training_model(input_shape, layers, num_of_class, embedding_size=128,
+                          training=False, margin=0.5, logit_scale=64):
     input_node = tf.keras.layers.Input(shape=(input_shape[0], input_shape[1], 3))
 
     net = create_se_resnet50(input_node, layers)
@@ -35,10 +35,10 @@ def create_training_model(input_shape, layers, num_of_class, training=False, mar
 
         net = tf.keras.layers.Dropout(0.4)(net)
         net = tf.keras.layers.Flatten()(net)
-        pre_logits = tf.keras.layers.Dense(128)(net)
+        pre_logits = tf.keras.layers.Dense(embedding_size)(net)
 
         logits = ArcMarginPenalty(num_classes=num_of_class, margin=margin,
-                                  logit_scale=logit_scale)((pre_logits, labels))
+                                  logit_scale=logit_scale, embedding_size=embedding_size)((pre_logits, labels))
         model = tf.keras.Model(inputs=[input_node, labels], outputs=[logits])
 
     else:
@@ -120,7 +120,9 @@ def prepare_for_training(ds, cache=False, shuffle_buffer_size=2000):
 
 def dummy():
     from trident import senet
+    from trident import load_lfw
     senet.SE_ResNet50(include_top=False, pretrained=True, input_shape=(3, 112, 112)).with_optimizer().with_loss()
+    load_lfw(format='aligned_face', is_paired=False)
 
 
 if __name__ == '__main__':
