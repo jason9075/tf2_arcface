@@ -13,6 +13,7 @@ TRAIN_CLASS_NAMES = np.array([])
 TRAIN_DATA_PATH = 'dataset/train/'
 VALID_DATA_PATH = 'dataset/val/'
 EPOCHS = 50
+IMAGE_SIZE = (112, 112)
 
 BATCH_SIZE = 32
 
@@ -65,7 +66,7 @@ def main():
     train_main_ds = train_list_ds.map(process_path, num_parallel_calls=AUTOTUNE)
     train_main_ds = prepare_for_training(train_main_ds)
 
-    model = create_training_model((112, 112), [3, 4, 6, 3], num_of_class, training=True)
+    model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], num_of_class, training=True)
 
     load_weight(model, 'pytorch_pretrained/se_resnet50-ce0d4300.pth', trainable=False, verbose=False)
     model.compile(optimizer="Adam", loss=softmax_loss)
@@ -91,13 +92,14 @@ def get_label(file_path):
 
 def decode_img(img):
     img = tf.image.decode_jpeg(img, channels=3)
+    img = tf.image.resize(img, IMAGE_SIZE)
     img = tf.image.random_brightness(img, 0.2)
     img = tf.image.random_saturation(img, 0.6, 1.6)
     img = tf.image.random_contrast(img, 0.6, 1.4)
     img = tf.image.random_flip_left_right(img)
-    img = tf.image.convert_image_dtype(img, tf.float32)
-    img = tf.subtract(img, 0.5)
-    img = tf.multiply(img, 2.0)
+    img = tf.clip_by_value(img, clip_value_min=0.0, clip_value_max=255.0)
+    img = tf.subtract(img, 127.5)
+    img = tf.multiply(img, 0.0078125)
     return img
 
 
