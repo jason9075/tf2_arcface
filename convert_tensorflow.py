@@ -17,10 +17,10 @@ TRAIN_CLASS_NAMES = np.array([])
 
 TRAIN_DATA_PATH = os.getenv("TRAIN_DATA_PATH")
 VALID_DATA_PATH = os.getenv("VALID_DATA_PATH")
-EPOCHS = os.getenv("EPOCHS")
+EPOCHS = int(os.getenv("EPOCHS"))
 IMAGE_SIZE = (112, 112)
 
-BATCH_SIZE = os.getenv("BATCH_SIZE")
+BATCH_SIZE = int(os.getenv("BATCH_SIZE"))
 
 
 def softmax_loss(y_true, y_pred):
