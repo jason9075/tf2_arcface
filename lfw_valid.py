@@ -15,8 +15,8 @@ def main():
     model.load_weights('checkpoints/e_500.ckpt')
 
     def embedding_fn(img1, img2):
-        result1 = model.predict(np.expand_dims(img1,axis=0))
-        result2 = model.predict(np.expand_dims(img2,axis=0))
+        result1 = model.predict(np.expand_dims(img1, axis=0))[0]
+        result2 = model.predict(np.expand_dims(img2, axis=0))[0]
         return result1, result2
 
     test_lfw('dataset/lfw.bin', embedding_fn, IMAGE_SIZE, is_plot=False)
@@ -89,7 +89,7 @@ def ver_tfrecord(data_set, embedding_fn, verbose=False, ver_type='euclidean'):
         print('cost_times: %.2f sec' % (timeit.default_timer() - start))
 
     if ver_type == 'euclidean':
-        thresholds = np.arange(0.1, 3.0, 0.05)
+        thresholds = np.arange(0.05, 6.0, 0.05)
     elif ver_type == 'cosine':
         thresholds = np.arange(0.05, 1.0, 0.05)
     else:

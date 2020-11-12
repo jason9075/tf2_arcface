@@ -50,9 +50,42 @@ def create_training_model(input_shape, layers, num_of_class, embedding_size=128,
         model = tf.keras.Model(inputs=[input_node, labels], outputs=[logits])
 
     else:
+        net = tf.keras.layers.Flatten()(net)
+        net = tf.keras.layers.Dense(embedding_size)(net)
+        net = tf.nn.l2_normalize(net, axis=1, name='normed_embd')
+
         model = tf.keras.Model(inputs=[input_node], outputs=[net])
 
     return model
+
+
+def test():
+    model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], 1, training=False)
+
+    model.load_weights('checkpoints/e_500.ckpt')
+
+    import cv2
+    img1 = cv2.imread('dataset/train/Abdul Somad/000002_0.jpg')
+    img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
+    img1 = cv2.resize(img1, (112, 112))
+    img1 = img1 - 127.5
+    img1 = img1 * 0.0078125
+
+    vector1 = model.predict(np.expand_dims(img1, axis=0))[0]
+    print(vector1)
+
+    img2 = cv2.imread('dataset/train/Abdul Somad/000006_0.jpg')
+    img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
+    img2 = cv2.resize(img2, (112, 112))
+    img2 = img2 - 127.5
+    img2 = img2 * 0.0078125
+
+    vector2 = model.predict(np.expand_dims(img2, axis=0))[0]
+    print(vector2)
+
+    dist = np.linalg.norm(vector1 - vector2)
+    print(dist)
+
 
 
 def main():
@@ -133,3 +166,4 @@ def prepare_for_training(ds, cache=False, shuffle_buffer_size=2000):
 
 if __name__ == '__main__':
     main()
+    # test()
