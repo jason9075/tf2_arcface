@@ -89,7 +89,7 @@ def ver_tfrecord(data_set, embedding_fn, verbose=False, ver_type='euclidean'):
         print('cost_times: %.2f sec' % (timeit.default_timer() - start))
 
     if ver_type == 'euclidean':
-        thresholds = np.arange(0.05, 6.0, 0.05)
+        thresholds = np.arange(0.05, 0.5, 0.05)
     elif ver_type == 'cosine':
         thresholds = np.arange(0.05, 1.0, 0.05)
     else:

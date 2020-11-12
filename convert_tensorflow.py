@@ -1,9 +1,10 @@
+import datetime
 import os
 import pathlib
+
 import numpy as np
 import tensorflow as tf
 from dotenv import load_dotenv
-
 from tensorflow.python.keras.callbacks import ModelCheckpoint
 
 from backend.utils import load_weight
@@ -19,6 +20,7 @@ TRAIN_DATA_PATH = os.getenv("TRAIN_DATA_PATH")
 VALID_DATA_PATH = os.getenv("VALID_DATA_PATH")
 EPOCHS = int(os.getenv("EPOCHS"))
 IMAGE_SIZE = (112, 112)
+RETRAIN = True
 
 BATCH_SIZE = int(os.getenv("BATCH_SIZE"))
 
@@ -104,13 +106,18 @@ def main():
 
     model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], num_of_class, training=True)
 
-    load_weight(model, 'pytorch_pretrained/se_resnet50-ce0d4300.pth', trainable=False, verbose=False)
+    if RETRAIN:
+        ckpt_path = tf.train.latest_checkpoint('checkpoints/')
+        model.load_weights(ckpt_path)
+    else:
+        load_weight(model, 'pytorch_pretrained/se_resnet50-ce0d4300.pth', trainable=False, verbose=False)
     model.summary()
 
     model.compile(optimizer="Adam", loss=softmax_loss)
+    training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
     checkpoint = ModelCheckpoint(
-        'checkpoints/e_{epoch}.ckpt',
+        f"checkpoints/{training_date}_e_{{epoch}}.ckpt",
         save_freq=int(steps_per_epoch * 10), verbose=1,
         save_best_only=True,
         save_weights_only=True)
