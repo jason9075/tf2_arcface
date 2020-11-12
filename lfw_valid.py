@@ -15,11 +15,11 @@ def main():
     model.load_weights('checkpoints/e_500.ckpt')
 
     def embedding_fn(img1, img2):
-        result1 = model.predict(img1)
-        result2 = model.predict(img2)
+        result1 = model.predict(np.expand_dims(img1,axis=0))
+        result2 = model.predict(np.expand_dims(img2,axis=0))
         return result1, result2
 
-    test_lfw('.bin', embedding_fn, IMAGE_SIZE, is_plot=False)
+    test_lfw('dataset/lfw.bin', embedding_fn, IMAGE_SIZE, is_plot=False)
 
 
 def load_bin(bin_path, input_size):
