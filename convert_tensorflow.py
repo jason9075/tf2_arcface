@@ -12,7 +12,6 @@ from model.se_resnet50 import create_se_resnet50
 load_dotenv()
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
-TRAIN_CLASS_NAMES = np.array([])
 
 IMAGE_SIZE = (224, 224)
 
@@ -47,7 +46,6 @@ def create_training_model(input_shape, layers, num_of_class, embedding_size=128,
 
 
 def main():
-    global TRAIN_CLASS_NAMES
 
     model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], 1, training=False)
 
