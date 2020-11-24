@@ -129,3 +129,11 @@ pytorch_pretrained/*
 # checkpoint
 checkpoints/*
 !checkpoints/.keep
+
+# other model
+tf_model/*
+!tf_model/.keep
+
+# other model
+saved_model/*
+!saved_model/.keep
