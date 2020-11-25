@@ -1,11 +1,8 @@
 import os
-import pathlib
 
-import numpy as np
 import tensorflow as tf
 from dotenv import load_dotenv
 
-from backend.utils import load_weight
 from loss_func.loss import ArcMarginPenalty
 from model.se_resnet50 import create_se_resnet50
 
@@ -49,6 +46,7 @@ def main():
 
     model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], 1, training=False)
 
+    from backend.utils import load_weight
     load_weight(model, 'pytorch_pretrained/se_resnet50-ce0d4300.pth', trainable=False, verbose=False)
     model.summary()
 
