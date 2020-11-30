@@ -17,6 +17,7 @@ parser.add_argument('--epoch', default=3, help='epoch')
 parser.add_argument('--freq_factor_by_number_of_epoch', default=1, help='freq_factor_by_number_of_epoch')
 parser.add_argument('--image_size', default=224, help='image_size')
 parser.add_argument('--model_dir', default="", help='model_dir')
+parser.add_argument('--pretrained', default="", help='pretrained')
 parser.add_argument('--task_name', default="fr-train", help='task_name')
 
 prefix = '/opt/ml/'
@@ -57,7 +58,7 @@ def main():
 
     model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], num_of_class, training=True)
 
-    model.load_weights('saved_model/tf_pretrain_weight.h5', by_name=True)
+    model.load_weights(args.pretrained, by_name=True)
     model.summary()
 
     radam = tfa.optimizers.RectifiedAdam()
