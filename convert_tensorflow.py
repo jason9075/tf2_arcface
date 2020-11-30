@@ -12,8 +12,6 @@ AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 IMAGE_SIZE = (224, 224)
 
-BATCH_SIZE = int(os.getenv("BATCH_SIZE"))
-
 
 def create_training_model(input_shape, layers, num_of_class, embedding_size=128,
                           training=False, margin=0.5, logit_scale=64):
