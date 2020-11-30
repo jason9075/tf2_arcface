@@ -1,23 +1,33 @@
 import datetime
+import json
 import os
 import pathlib
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.keras.callbacks import ModelCheckpoint
+import tensorflow_addons as tfa
+from tensorflow.python.keras.callbacks import ModelCheckpoint, TensorBoard
 
 from convert_tensorflow import create_training_model
+
+prefix = '/opt/ml/'
+
+input_path = prefix + 'input/data'
+output_path = os.path.join(prefix, 'output')
+model_path = os.path.join(prefix, 'model')
+param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 TRAIN_CLASS_NAMES = np.array([])
 
-TRAIN_DATA_PATH = os.getenv("TRAIN_DATA_PATH")
-VALID_DATA_PATH = os.getenv("VALID_DATA_PATH")
-EPOCHS = int(os.getenv("EPOCHS"))
-IMAGE_SIZE = (224, 224)
-RETRAIN = False
+with open(param_path, 'r') as tc:
+    trainingParams = json.load(tc)
 
-BATCH_SIZE = int(os.getenv("BATCH_SIZE"))
+TRAIN_DATA_PATH = os.path.join(input_path, 'training')
+EPOCHS = int(trainingParams.get('epoch', 5))
+IMAGE_SIZE = (int(trainingParams.get('img_size', 224)), int(trainingParams.get('img_size', 224)))
+BATCH_SIZE = int(trainingParams.get('batch_size', 32))
+FREQ_FACTOR = int(trainingParams.get('freq_factor_by_number_of_epoch', 10))
 
 
 def main():
@@ -36,26 +46,29 @@ def main():
 
     model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], num_of_class, training=True)
 
-    if RETRAIN:
-        ckpt_path = tf.train.latest_checkpoint('checkpoints/')
-        model.load_weights(ckpt_path)
-    else:
-        model.load_weights('saved_model/tf_pretrain_weight.h5', by_name=True)
+    model.load_weights('saved_model/tf_pretrain_weight.h5', by_name=True)
     model.summary()
 
-    model.compile(optimizer="adam", loss=softmax_loss)
+    radam = tfa.optimizers.RectifiedAdam()
+    ranger = tfa.optimizers.Lookahead(radam, sync_period=6, slow_step_size=0.5)
+
+    model.compile(optimizer=ranger, loss=softmax_loss)
     training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
     checkpoint = ModelCheckpoint(
-        f"checkpoints/{training_date}_e_{{epoch}}.ckpt",
-        save_freq=int(steps_per_epoch * 10), verbose=1,
+        os.path.join(model_path, f"{training_date}_e_{{epoch}}.ckpt"),
+        save_freq=int(steps_per_epoch * FREQ_FACTOR), verbose=1,
         save_best_only=True,
         save_weights_only=True)
+
+    record = TensorBoard(log_dir=output_path,
+                         update_freq=int(steps_per_epoch * FREQ_FACTOR),
+                         profile_batch=0)
 
     model.fit(train_main_ds,
               epochs=EPOCHS,
               steps_per_epoch=steps_per_epoch,
-              callbacks=[checkpoint],
+              callbacks=[checkpoint, record],
               # initial_epoch=epochs - 1)
               )
 

@@ -1,0 +1,6 @@
+{
+  "image_size" : "json",
+  "batch_size" : 128,
+  "epoch": 500,
+  "freq_factor_by_number_of_epoch": 10
+}
