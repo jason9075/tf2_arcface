@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import pathlib
+from argparse import ArgumentParser
 
 import numpy as np
 import tensorflow as tf
@@ -9,6 +10,14 @@ import tensorflow_addons as tfa
 from tensorflow.python.keras.callbacks import ModelCheckpoint, TensorBoard
 
 from convert_tensorflow import create_training_model
+
+parser = ArgumentParser()
+parser.add_argument('--batch_size', action='store_true', default=128, help='batch_size')
+parser.add_argument('--epoch', action='store_true', default=3, help='epoch')
+parser.add_argument('--freq_factor_by_number_of_epoch', action='store_true', default=1, help='freq_factor_by_number_of_epoch')
+parser.add_argument('--image_size', action='store_true', default=224, help='image_size')
+parser.add_argument('--model_dir', action='store_true', default="", help='model_dir')
+parser.add_argument('--task_name', action='store_true', default="fr-train", help='task_name')
 
 prefix = '/opt/ml/'
 
@@ -20,14 +29,16 @@ param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 TRAIN_CLASS_NAMES = np.array([])
 
-with open(param_path, 'r') as tc:
-    trainingParams = json.load(tc)
+# with open(param_path, 'r') as tc:
+#     trainingParams = json.load(tc)
+
+args = parser.parse_args()
 
 TRAIN_DATA_PATH = os.path.join(input_path, 'training')
-EPOCHS = int(trainingParams.get('epoch', 5))
-IMAGE_SIZE = (int(trainingParams.get('img_size', 224)), int(trainingParams.get('img_size', 224)))
-BATCH_SIZE = int(trainingParams.get('batch_size', 32))
-FREQ_FACTOR = int(trainingParams.get('freq_factor_by_number_of_epoch', 10))
+EPOCHS = int(args.epoch)
+IMAGE_SIZE = (int(args.image_size), int(args.image_size))
+BATCH_SIZE = int(args.batch_size)
+FREQ_FACTOR = int(args.freq_factor_by_number_of_epoch)
 
 
 def main():
@@ -56,7 +67,7 @@ def main():
     training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
     checkpoint = ModelCheckpoint(
-        os.path.join(model_path, f"{training_date}_e_{{epoch}}.ckpt"),
+        os.path.join(args.model_dir, f"{training_date}_e_{{epoch}}.ckpt"),
         save_freq=int(steps_per_epoch * FREQ_FACTOR), verbose=1,
         save_best_only=True,
         save_weights_only=True)
