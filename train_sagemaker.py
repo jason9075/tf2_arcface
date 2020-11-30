@@ -12,12 +12,12 @@ from tensorflow.python.keras.callbacks import ModelCheckpoint, TensorBoard
 from convert_tensorflow import create_training_model
 
 parser = ArgumentParser()
-parser.add_argument('--batch_size', action='store_true', default=128, help='batch_size')
-parser.add_argument('--epoch', action='store_true', default=3, help='epoch')
-parser.add_argument('--freq_factor_by_number_of_epoch', action='store_true', default=1, help='freq_factor_by_number_of_epoch')
-parser.add_argument('--image_size', action='store_true', default=224, help='image_size')
-parser.add_argument('--model_dir', action='store_true', default="", help='model_dir')
-parser.add_argument('--task_name', action='store_true', default="fr-train", help='task_name')
+parser.add_argument('--batch_size', default=128, help='batch_size')
+parser.add_argument('--epoch', default=3, help='epoch')
+parser.add_argument('--freq_factor_by_number_of_epoch', default=1, help='freq_factor_by_number_of_epoch')
+parser.add_argument('--image_size', default=224, help='image_size')
+parser.add_argument('--model_dir', default="", help='model_dir')
+parser.add_argument('--task_name', default="fr-train", help='task_name')
 
 prefix = '/opt/ml/'
 
