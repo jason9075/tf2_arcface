@@ -41,7 +41,7 @@ f.close()
 f = open("/opt/ml/model/model.txt", "a")
 f.write("Now the file has more content!")
 f.close()
-
+print(os.environ.get('SM_MODEL_DIR'))
 exit(0)
 
 TRAIN_DATA_PATH = os.path.join(input_path, 'training')
