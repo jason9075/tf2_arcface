@@ -34,6 +34,11 @@ TRAIN_CLASS_NAMES = np.array([])
 #     trainingParams = json.load(tc)
 
 args = parser.parse_args()
+f = open(f"{args.model_dir}demofile2.txt", "a")
+f.write("Now the file has more content!")
+f.close()
+
+exit(0)
 
 TRAIN_DATA_PATH = os.path.join(input_path, 'training')
 EPOCHS = int(args.epoch)
@@ -44,7 +49,7 @@ FREQ_FACTOR = int(args.freq_factor_by_number_of_epoch)
 
 def main():
     global TRAIN_CLASS_NAMES
-    print(f'training path ls :{os.listdir(TRAIN_DATA_PATH)}')
+
     train_data_dir = pathlib.Path(TRAIN_DATA_PATH)
     train_list_ds = tf.data.Dataset.list_files(str(train_data_dir / '*/*.jpg'))
     TRAIN_CLASS_NAMES = np.array(
