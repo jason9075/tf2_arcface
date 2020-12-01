@@ -58,7 +58,14 @@ def main():
 
     model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], num_of_class, training=True)
 
-    model.load_weights(args.pretrained, by_name=True)
+    # download pre trained weight
+    import boto3
+    s3 = boto3.client('s3')
+    s3.download_file('astra-face-recognition-dataset',
+                     f'pretrained/{args.pretrained}',
+                     os.path.join('saved_model', args.pretrained))
+
+    model.load_weights(os.path.join('saved_model', args.pretrained), by_name=True)
     model.summary()
 
     radam = tfa.optimizers.RectifiedAdam()
