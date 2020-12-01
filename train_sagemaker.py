@@ -34,7 +34,7 @@ TRAIN_CLASS_NAMES = np.array([])
 #     trainingParams = json.load(tc)
 
 args = parser.parse_args()
-f = open(f"{args.model_dir}demofile2.txt", "a")
+f = open("/opt/ml/demofile2.txt", "a")
 f.write("Now the file has more content!")
 f.close()
 
