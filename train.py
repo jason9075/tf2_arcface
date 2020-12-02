@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
 from dotenv import load_dotenv
-from tensorflow.python.keras.callbacks import ModelCheckpoint
+from tensorflow.python.keras.callbacks import ModelCheckpoint, TensorBoard
 
 from convert_tensorflow import create_training_model
 
@@ -59,10 +59,17 @@ def main():
         save_best_only=True,
         save_weights_only=True)
 
+    record = TensorBoard(log_dir='saved_model/',
+                         update_freq=1,
+                         profile_batch=0)
+
+    record._total_batches_seen = steps_per_epoch
+    record._samples_seen = steps_per_epoch * BATCH_SIZE
+
     model.fit(train_main_ds,
               epochs=EPOCHS,
               steps_per_epoch=steps_per_epoch,
-              callbacks=[checkpoint],
+              callbacks=[checkpoint, record],
               # initial_epoch=epochs - 1)
               )
 

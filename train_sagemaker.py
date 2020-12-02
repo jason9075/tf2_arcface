@@ -85,6 +85,9 @@ def main():
                          update_freq=int(steps_per_epoch * FREQ_FACTOR),
                          profile_batch=0)
 
+    record._total_batches_seen = steps_per_epoch
+    record._samples_seen = steps_per_epoch * BATCH_SIZE
+
     model.fit(train_main_ds,
               epochs=EPOCHS,
               steps_per_epoch=steps_per_epoch,
