@@ -34,15 +34,6 @@ TRAIN_CLASS_NAMES = np.array([])
 #     trainingParams = json.load(tc)
 
 args = parser.parse_args()
-f = open("/opt/ml/output/output.txt", "a")
-f.write("Now the file has more content!")
-f.close()
-
-f = open("/opt/ml/model/model.txt", "a")
-f.write("Now the file has more content!")
-f.close()
-print(os.environ.get('SM_MODEL_DIR'))
-exit(0)
 
 TRAIN_DATA_PATH = os.path.join(input_path, 'training')
 EPOCHS = int(args.epoch)
@@ -84,7 +75,7 @@ def main():
     training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
     checkpoint = ModelCheckpoint(
-        os.path.join(args.model_dir, f"{training_date}_e_{{epoch}}.ckpt"),
+        os.path.join(model_path, f"{training_date}_e_{{epoch}}.ckpt"),
         save_freq=int(steps_per_epoch * FREQ_FACTOR), verbose=1,
         save_best_only=True,
         save_weights_only=True)
