@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 
 import numpy as np
 import tensorflow as tf
-# import tensorflow_addons as tfa
+import tensorflow_addons as tfa
 from tensorflow.python.keras.callbacks import ModelCheckpoint, TensorBoard
 
 from convert_tensorflow import create_training_model
@@ -16,15 +16,14 @@ parser.add_argument('--batch_size', default=128, help='batch_size')
 parser.add_argument('--epoch', default=3, help='epoch')
 parser.add_argument('--freq_factor_by_number_of_epoch', default=1, help='freq_factor_by_number_of_epoch')
 parser.add_argument('--image_size', default=224, help='image_size')
-parser.add_argument('--model_dir', default="", help='model_dir')
 parser.add_argument('--pretrained', default="", help='pretrained')
 parser.add_argument('--task_name', default="fr-train", help='task_name')
 
 prefix = '/opt/ml/'
 
 input_path = prefix + 'input/data'
-output_path = os.path.join(prefix, 'output')
-model_path = os.path.join(prefix, 'model')
+ckpt_path = os.path.join(prefix, 'model', 'ckpt')
+model_path = os.path.join(prefix, 'model', 'saved_model')
 param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
@@ -68,10 +67,10 @@ def main():
     model.load_weights(os.path.join('saved_model', args.pretrained), by_name=True)
     model.summary()
 
-    # radam = tfa.optimizers.RectifiedAdam()
-    # ranger = tfa.optimizers.Lookahead(radam, sync_period=6, slow_step_size=0.5)
+    radam = tfa.optimizers.RectifiedAdam()
+    ranger = tfa.optimizers.Lookahead(radam, sync_period=6, slow_step_size=0.5)
 
-    model.compile(optimizer='adam', loss=softmax_loss)
+    model.compile(optimizer=ranger, loss=softmax_loss)
     training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
     checkpoint = ModelCheckpoint(
@@ -81,7 +80,7 @@ def main():
         # save_best_only=True,
         # save_weights_only=True)
 
-    record = TensorBoard(log_dir=output_path,
+    record = TensorBoard(log_dir=ckpt_path,
                          update_freq=int(steps_per_epoch * FREQ_FACTOR),
                          profile_batch=0)
 
