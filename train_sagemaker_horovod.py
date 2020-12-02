@@ -7,12 +7,10 @@ import horovod.keras as hvd
 import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
-from tensorflow.python.keras.callbacks import ModelCheckpoint, TensorBoard
-from tensorflow.python.keras.optimizers import Adam
+from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
+from tensorflow.keras.optimizers import Adam
 
 from convert_tensorflow import create_training_model
-
-tf.compat.v1.disable_eager_execution()
 
 parser = ArgumentParser()
 parser.add_argument('--batch_size', default=128, help='batch_size')
