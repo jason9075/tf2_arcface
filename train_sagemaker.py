@@ -76,9 +76,10 @@ def main():
 
     checkpoint = ModelCheckpoint(
         os.path.join(model_path, f"{training_date}_e_{{epoch}}.ckpt"),
-        save_freq=int(steps_per_epoch * FREQ_FACTOR), verbose=1,
-        save_best_only=True,
-        save_weights_only=True)
+        save_freq=int(steps_per_epoch * FREQ_FACTOR))
+        # verbose=1,
+        # save_best_only=True,
+        # save_weights_only=True)
 
     record = TensorBoard(log_dir=output_path,
                          update_freq=int(steps_per_epoch * FREQ_FACTOR),
