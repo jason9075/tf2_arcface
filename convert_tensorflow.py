@@ -1,12 +1,7 @@
-import os
-
 import tensorflow as tf
-from dotenv import load_dotenv
 
 from loss_func.loss import ArcMarginPenalty
 from model.se_resnet50 import create_se_resnet50
-
-load_dotenv()
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
