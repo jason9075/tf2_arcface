@@ -12,6 +12,8 @@ from tensorflow.python.keras.optimizers import Adam
 
 from convert_tensorflow import create_training_model
 
+tf.compat.v1.disable_eager_execution()
+
 parser = ArgumentParser()
 parser.add_argument('--batch_size', default=128, help='batch_size')
 parser.add_argument('--epoch', default=3, help='epoch')
