@@ -75,7 +75,7 @@ def main():
     training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
     checkpoint = ModelCheckpoint(
-        os.path.join(ckpt_path, f"{training_date}_e_{{epoch}}.ckpt"),
+        os.path.join(ckpt_path, f"{training_date}_e_{{epoch}}"),
         save_freq=int(steps_per_epoch * FREQ_FACTOR))
         # verbose=1,
         # save_best_only=True,
