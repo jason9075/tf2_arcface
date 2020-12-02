@@ -91,7 +91,7 @@ def main():
     model.fit(train_main_ds,
               epochs=EPOCHS,
               steps_per_epoch=steps_per_epoch,
-              callbacks=[checkpoint, record],
+              callbacks=[checkpoint],
               # initial_epoch=epochs - 1)
               )
 
