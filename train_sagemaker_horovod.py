@@ -8,6 +8,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
 from tensorflow.python.keras.callbacks import ModelCheckpoint, TensorBoard
+from tensorflow.python.keras.optimizers import Adam
 
 from convert_tensorflow import create_training_model
 
@@ -76,11 +77,12 @@ def main():
     model.load_weights(os.path.join('saved_model', args.pretrained), by_name=True)
     model.summary()
 
-    radam = tfa.optimizers.RectifiedAdam(0.001 * hvd_size)
-    ranger = tfa.optimizers.Lookahead(radam, sync_period=6, slow_step_size=0.5)
-    ranger = hvd.DistributedOptimizer(ranger)
+    # radam = tfa.optimizers.RectifiedAdam(0.001 * hvd_size)
+    # ranger = tfa.optimizers.Lookahead(radam, sync_period=6, slow_step_size=0.5)
+    adam = Adam(0.001 * hvd_size)
+    adam = hvd.DistributedOptimizer(adam)
 
-    model.compile(optimizer=ranger, loss=softmax_loss)
+    model.compile(optimizer=adam, loss=softmax_loss)
     training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
     callbacks = []
