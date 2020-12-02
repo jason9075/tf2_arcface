@@ -24,7 +24,7 @@ prefix = '/opt/ml/'
 
 input_path = prefix + 'input/data'
 ckpt_path = os.path.join(prefix, 'model', 'ckpt')
-model_path = os.path.join(prefix, 'model', 'saved_model')
+tb_path = os.path.join(prefix, 'model', 'tensorboard')
 param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
@@ -75,13 +75,13 @@ def main():
     training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
     checkpoint = ModelCheckpoint(
-        os.path.join(model_path, f"{training_date}_e_{{epoch}}.ckpt"),
+        os.path.join(ckpt_path, f"{training_date}_e_{{epoch}}.ckpt"),
         save_freq=int(steps_per_epoch * FREQ_FACTOR))
         # verbose=1,
         # save_best_only=True,
         # save_weights_only=True)
 
-    record = TensorBoard(log_dir=ckpt_path,
+    record = TensorBoard(log_dir=tb_path,
                          update_freq=int(steps_per_epoch * FREQ_FACTOR),
                          profile_batch=0)
 
@@ -91,7 +91,7 @@ def main():
     model.fit(train_main_ds,
               epochs=EPOCHS,
               steps_per_epoch=steps_per_epoch,
-              callbacks=[checkpoint],
+              callbacks=[checkpoint, record],
               # initial_epoch=epochs - 1)
               )
 
