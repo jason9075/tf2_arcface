@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 
 import numpy as np
 import tensorflow as tf
-import tensorflow_addons as tfa
+# import tensorflow_addons as tfa
 from tensorflow.python.keras.callbacks import ModelCheckpoint, TensorBoard
 
 from convert_tensorflow import create_training_model
@@ -68,10 +68,10 @@ def main():
     model.load_weights(os.path.join('saved_model', args.pretrained), by_name=True)
     model.summary()
 
-    radam = tfa.optimizers.RectifiedAdam()
-    ranger = tfa.optimizers.Lookahead(radam, sync_period=6, slow_step_size=0.5)
+    # radam = tfa.optimizers.RectifiedAdam()
+    # ranger = tfa.optimizers.Lookahead(radam, sync_period=6, slow_step_size=0.5)
 
-    model.compile(optimizer=ranger, loss=softmax_loss)
+    model.compile(optimizer='adam', loss=softmax_loss)
     training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
     checkpoint = ModelCheckpoint(
