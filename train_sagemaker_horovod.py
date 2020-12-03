@@ -3,7 +3,8 @@ import os
 import pathlib
 from argparse import ArgumentParser
 
-import horovod.keras as hvd
+import horovod.tensorflow.keras as hvd
+import tensorflow.keras.backend as K
 import numpy as np
 import tensorflow as tf
 # import tensorflow_addons as tfa
@@ -43,17 +44,24 @@ BATCH_SIZE = int(args.batch_size)
 FREQ_FACTOR = int(args.freq_factor_by_number_of_epoch)
 
 hvd.init()
-gpus = tf.config.experimental.list_physical_devices('GPU')
-for gpu in gpus:
-    tf.config.experimental.set_memory_growth(gpu, True)
-tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
+hvd_size = hvd.size()
+
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+config.gpu_options.visible_device_list = str(hvd.local_rank())
+K.set_session(tf.Session(config=config))
+
+# gpus = tf.config.experimental.list_physical_devices('GPU')
+# for gpu in gpus:
+#     tf.config.experimental.set_memory_growth(gpu, True)
+# tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
 
 
 def main():
     global TRAIN_CLASS_NAMES
 
-    hvd_size = hvd.size()
     print(f'hvd_size: {hvd_size}.')
+    print(f'hvd rank: {hvd.rank()}.')
 
     train_data_dir = pathlib.Path(TRAIN_DATA_PATH)
     train_list_ds = tf.data.Dataset.list_files(str(train_data_dir / '*/*.jpg'))
@@ -76,7 +84,7 @@ def main():
                      os.path.join('saved_model', args.pretrained))
 
     model.load_weights(os.path.join('saved_model', args.pretrained), by_name=True)
-    model.summary()
+    # model.summary()
 
     # radam = tfa.optimizers.RectifiedAdam(0.001 * hvd_size)
     # ranger = tfa.optimizers.Lookahead(radam, sync_period=6, slow_step_size=0.5)
