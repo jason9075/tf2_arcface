@@ -46,15 +46,11 @@ FREQ_FACTOR = int(args.freq_factor_by_number_of_epoch)
 hvd.init()
 hvd_size = hvd.size()
 
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
-config.gpu_options.visible_device_list = str(hvd.local_rank())
-K.set_session(tf.Session(config=config))
 
-# gpus = tf.config.experimental.list_physical_devices('GPU')
-# for gpu in gpus:
-#     tf.config.experimental.set_memory_growth(gpu, True)
-# tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
+gpus = tf.config.experimental.list_physical_devices('GPU')
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
 
 
 def main():
