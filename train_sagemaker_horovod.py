@@ -4,7 +4,6 @@ import pathlib
 from argparse import ArgumentParser
 
 import horovod.tensorflow.keras as hvd
-import tensorflow.keras.backend as K
 import numpy as np
 import tensorflow as tf
 # import tensorflow_addons as tfa
@@ -48,6 +47,7 @@ hvd_size = hvd.size()
 
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
+print(gpus)
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
