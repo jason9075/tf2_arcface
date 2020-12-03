@@ -53,6 +53,7 @@ def main():
     global TRAIN_CLASS_NAMES
 
     hvd_size = hvd.size()
+    print(f'hvd_size: {hvd_size}.')
 
     train_data_dir = pathlib.Path(TRAIN_DATA_PATH)
     train_list_ds = tf.data.Dataset.list_files(str(train_data_dir / '*/*.jpg'))
@@ -77,12 +78,12 @@ def main():
     model.load_weights(os.path.join('saved_model', args.pretrained), by_name=True)
     model.summary()
 
-    # radam = tfa.optimizers.RectifiedAdam(0.001 * hvd_size)
-    # ranger = tfa.optimizers.Lookahead(radam, sync_period=6, slow_step_size=0.5)
-    adam = Adam(0.001 * hvd_size)
-    adam = hvd.DistributedOptimizer(adam)
+    radam = tfa.optimizers.RectifiedAdam(0.001 * hvd_size)
+    ranger = tfa.optimizers.Lookahead(radam, sync_period=6, slow_step_size=0.5)
+    # adam = Adam(0.001 * hvd_size)
+    ranger = hvd.DistributedOptimizer(ranger)
 
-    model.compile(optimizer=adam, loss=softmax_loss)
+    model.compile(optimizer=ranger, loss=softmax_loss)
     training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
     callbacks = []
@@ -102,6 +103,7 @@ def main():
               epochs=EPOCHS,
               steps_per_epoch=steps_per_epoch,
               callbacks=callbacks,
+              verbose=(1 if hvd.rank() == 0 else 0)
               # initial_epoch=epochs - 1)
               )
 
