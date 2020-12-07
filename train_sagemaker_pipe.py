@@ -86,6 +86,13 @@ def main():
     train_main_ds = prepare_for_training(train_main_ds)
     steps_per_epoch = np.ceil(TRAIN_IMAGE_COUNT / BATCH_SIZE)
 
+    ## debug
+
+    result = next(iter(train_main_ds))
+    print(result)
+    exit(0)
+    ##
+
     model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], NUM_CLASSES, training=True)
 
     # download pre trained weight
@@ -96,7 +103,7 @@ def main():
                      os.path.join('saved_model', args.pretrained))
 
     model.load_weights(os.path.join('saved_model', args.pretrained), by_name=True)
-    model.summary()
+    # model.summary()
 
     radam = tfa.optimizers.RectifiedAdam()
     ranger = tfa.optimizers.Lookahead(radam, sync_period=6, slow_step_size=0.5)
