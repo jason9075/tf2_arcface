@@ -41,7 +41,8 @@ EPOCHS = int(args.epoch)
 IMAGE_SIZE = (int(args.image_size), int(args.image_size))
 BATCH_SIZE = int(args.batch_size)
 FREQ_FACTOR = int(args.freq_factor_by_number_of_epoch)
-NUM_CLASSES = args.num_of_class
+NUM_CLASSES = int(args.num_of_class)
+TRAIN_IMAGE_COUNT = int(args.train_image_count)
 
 
 def _dataset_parser(value):
@@ -83,7 +84,7 @@ def main():
     train_main_ds = PipeModeDataset(channel='train', record_format='TFRecord')
     train_main_ds = train_main_ds.map(_dataset_parser, num_parallel_calls=AUTOTUNE)
     train_main_ds = prepare_for_training(train_main_ds)
-    steps_per_epoch = np.ceil(args.train_image_count / BATCH_SIZE)
+    steps_per_epoch = np.ceil(TRAIN_IMAGE_COUNT / BATCH_SIZE)
 
     model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], NUM_CLASSES, training=True)
 

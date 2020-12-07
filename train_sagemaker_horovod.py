@@ -36,7 +36,7 @@ TRAIN_CLASS_NAMES = np.array([])
 
 args = parser.parse_args()
 
-TRAIN_DATA_PATH = os.path.join(input_path, 'training')
+TRAIN_DATA_PATH = os.path.join(input_path, 'train')
 EPOCHS = int(args.epoch)
 IMAGE_SIZE = (int(args.image_size), int(args.image_size))
 BATCH_SIZE = int(args.batch_size)
