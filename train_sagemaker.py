@@ -12,7 +12,7 @@ from tensorflow.python.keras.callbacks import ModelCheckpoint, TensorBoard
 from convert_tensorflow import create_training_model
 
 parser = ArgumentParser()
-parser.add_argument('--batch_size', default=128, help='batch_size')
+parser.add_argument('--batch_size', default=16, help='batch_size')
 parser.add_argument('--epoch', default=3, help='epoch')
 parser.add_argument('--freq_factor_by_number_of_epoch', default=1, help='freq_factor_by_number_of_epoch')
 parser.add_argument('--image_size', default=224, help='image_size')

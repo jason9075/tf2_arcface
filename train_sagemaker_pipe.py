@@ -1,7 +1,6 @@
 import datetime
 import json
 import os
-from sagemaker_tensorflow import PipeModeDataset
 from argparse import ArgumentParser
 
 import numpy as np
@@ -12,7 +11,7 @@ from tensorflow.python.keras.callbacks import ModelCheckpoint, TensorBoard
 from convert_tensorflow import create_training_model
 
 parser = ArgumentParser()
-parser.add_argument('--batch_size', default=128, help='batch_size')
+parser.add_argument('--batch_size', default=16, help='batch_size')
 parser.add_argument('--epoch', default=3, help='epoch')
 parser.add_argument('--freq_factor_by_number_of_epoch', default=1, help='freq_factor_by_number_of_epoch')
 parser.add_argument('--image_size', default=224, help='image_size')
@@ -52,15 +51,16 @@ def _dataset_parser(value):
     }
 
     example = tf.io.parse_single_example(value, featdef)
-    image = tf.io.decode_raw(example['image/encoded'], tf.uint8)
-    image.set_shape([3 * 224 * 224])
+    # image = tf.io.decode_raw(example['image/encoded'], tf.uint8)
+    image = tf.image.decode_jpeg(example['image/encoded'], channels=3)
+    # image.set_shape([3 * 224 * 224])
 
     # Reshape from [depth * height * width] to [depth, height, width].
-    image = tf.cast(
-        tf.transpose(tf.reshape(image, [3, 224, 224]), [1, 2, 0]),
-        tf.float32)
+    # image = tf.cast(
+    #     tf.transpose(tf.reshape(image, [3, 224, 224]), [1, 2, 0]),
+    #     tf.float32)
     label = tf.cast(example['image/source_id'], tf.int32)
-    image = _train_preprocess_fn(image)
+    # image = _train_preprocess_fn(image)
     return image, label
 
 
@@ -80,17 +80,21 @@ def _train_preprocess_fn(img):
 
 
 def main():
-
+    from sagemaker_tensorflow import PipeModeDataset
     train_main_ds = PipeModeDataset(channel='train', record_format='TFRecord')
+    # train_main_ds = tf.data.TFRecordDataset('dataset/divide.tfrecord')
+
     train_main_ds = train_main_ds.map(_dataset_parser, num_parallel_calls=AUTOTUNE)
     train_main_ds = prepare_for_training(train_main_ds)
     steps_per_epoch = np.ceil(TRAIN_IMAGE_COUNT / BATCH_SIZE)
 
     ## debug
 
-    result = next(iter(train_main_ds))
-    print(result)
-    exit(0)
+    # img, label = next(iter(train_main_ds))
+    # print(img[0])
+    # import cv2
+    # cv2.imwrite('test.jpg', np.array(img[0]))
+    # exit(0)
     ##
 
     model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], NUM_CLASSES, training=True)
