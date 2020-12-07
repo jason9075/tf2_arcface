@@ -61,7 +61,7 @@ def _dataset_parser(value):
     #     tf.float32)
     label = tf.cast(example['image/source_id'], tf.int32)
     # image = _train_preprocess_fn(image)
-    return image, label
+    return (image, label), label
 
 
 def _train_preprocess_fn(img):
