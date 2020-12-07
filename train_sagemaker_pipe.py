@@ -20,8 +20,6 @@ parser.add_argument('--model_dir', default="", help='model_dir')
 parser.add_argument('--pretrained', default="", help='pretrained')
 parser.add_argument('--task_name', default="fr-train", help='task_name')
 parser.add_argument('--num_of_class', default=353, help='num_of_class')
-parser.add_argument('--channel', default='training', help='channel')
-parser.add_argument('--mode', default='file', help='input mode')
 parser.add_argument('--train_image_count', default=6382, help='train_image_count')
 
 prefix = '/opt/ml/'
@@ -39,7 +37,6 @@ TRAIN_CLASS_NAMES = np.array([])
 
 args = parser.parse_args()
 
-TRAIN_DATA_PATH = os.path.join(input_path, args.channel)
 EPOCHS = int(args.epoch)
 IMAGE_SIZE = (int(args.image_size), int(args.image_size))
 BATCH_SIZE = int(args.batch_size)
@@ -61,7 +58,7 @@ def _dataset_parser(value):
     image = tf.cast(
         tf.transpose(tf.reshape(image, [3, 224, 224]), [1, 2, 0]),
         tf.float32)
-    label = tf.cast(example['label'], tf.int32)
+    label = tf.cast(example['image/source_id'], tf.int32)
     image = _train_preprocess_fn(image)
     return image, label
 
@@ -82,9 +79,8 @@ def _train_preprocess_fn(img):
 
 
 def main():
-    global TRAIN_CLASS_NAMES
 
-    train_main_ds = PipeModeDataset(channel=args.channel, record_format='TFRecord')
+    train_main_ds = PipeModeDataset(channel='train', record_format='TFRecord')
     train_main_ds = train_main_ds.map(_dataset_parser, num_parallel_calls=AUTOTUNE)
     train_main_ds = prepare_for_training(train_main_ds)
     steps_per_epoch = np.ceil(args.train_image_count / BATCH_SIZE)
