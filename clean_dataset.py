@@ -1,16 +1,16 @@
 import glob
 import itertools
-import math
 import os
 import random
 import shutil
 from shutil import copyfile
 
 import cv2
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
+import tqdm
 
-from aug_func import random_blur, remap, shear_image, slight_rotate, distort_face, random_brightness_and_contrast
+from aug_func import random_blur, shear_image, slight_rotate, distort_face, random_brightness_and_contrast
 from face_align import align
 
 TARGET_FOLDER = 'dataset/folder/'
@@ -162,7 +162,7 @@ def aug_data():
     dirs = [d for d in dirs if os.path.isdir(os.path.join(DUP_CHECK_FOLDER, d))]
     dirs = [d for d in dirs if not d.startswith('.')]
 
-    for member_name in dirs[:10]:
+    for member_name in tqdm.tqdm(dirs):
         if os.path.isdir(os.path.join(AUG_FOLDER, member_name)):
             continue
 
