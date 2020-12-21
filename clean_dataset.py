@@ -1,3 +1,4 @@
+import csv
 import glob
 import itertools
 import os
@@ -17,8 +18,8 @@ TARGET_FOLDER = 'dataset/folder/'
 MERGE_FOLDER = 'dataset/merge/'
 DIVIDE_FOLDER = 'dataset/divide/'
 
-DUP_CHECK_FOLDER = 'dataset/cele_tiny_dup/'
-AUG_FOLDER = 'dataset/test_dup/'
+DUP_CHECK_FOLDER = 'dataset/cele_cc_2/'
+AUG_FOLDER = 'dataset/cele_cc_2_aug/'
 
 SIZE = 224
 AUG_COUNT = 3
@@ -162,6 +163,8 @@ def aug_data():
     dirs = [d for d in dirs if os.path.isdir(os.path.join(DUP_CHECK_FOLDER, d))]
     dirs = [d for d in dirs if not d.startswith('.')]
 
+    error_list = []
+
     for member_name in tqdm.tqdm(dirs):
         if os.path.isdir(os.path.join(AUG_FOLDER, member_name)):
             continue
@@ -170,9 +173,16 @@ def aug_data():
 
         member_img_paths = glob.glob(os.path.join(DUP_CHECK_FOLDER, member_name, '*.jpg'))
         for idx in range(AUG_COUNT):
+            if len(member_img_paths) == 0:
+                error_list.append(member_img_paths)
+                continue
             chosen_one = random.choice(member_img_paths)
 
             img = cv2.imread(chosen_one)
+
+            if img is None:
+                error_list.append(chosen_one)
+                continue
 
             aug_order = [random.randint(0, 4) for _ in range(3)]
             img = aug_image(img, aug_order)
@@ -180,6 +190,11 @@ def aug_data():
 
             cv2.imwrite(os.path.join(AUG_FOLDER, member_name, f'{member_name}-aug{idx}.jpg'), img)
             del img
+
+    print(error_list)
+    with open('aug_fail.csv', 'w+', newline='') as file:
+        write = csv.writer(file)
+        write.writerows(error_list)
 
 
 
