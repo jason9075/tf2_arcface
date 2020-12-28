@@ -52,12 +52,12 @@ def _dataset_parser(value):
     example = tf.io.parse_single_example(value, featdef)
     # image = tf.io.decode_raw(example['image/encoded'], tf.uint8)
     image = tf.image.decode_jpeg(example['image/encoded'], channels=3)
-    image.set_shape([3 * 224 * 224])
+    # image.set_shape([3 * 224 * 224])
 
     # Reshape from [depth * height * width] to [depth, height, width].
-    image = tf.cast(
-        tf.transpose(tf.reshape(image, [3, 224, 224]), [1, 2, 0]),
-        tf.float32)
+    # image = tf.cast(
+    #     tf.transpose(tf.reshape(image, [3, 224, 224]), [1, 2, 0]),
+    #     tf.float32)
     label = tf.cast(example['image/source_id'], tf.int32)
     image = _train_preprocess_fn(image)
     return (image, label), label
