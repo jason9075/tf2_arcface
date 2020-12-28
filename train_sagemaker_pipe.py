@@ -29,7 +29,6 @@ tb_path = os.path.join(prefix, 'model', 'tensorboard')
 param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
-TRAIN_CLASS_NAMES = np.array([])
 
 # with open(param_path, 'r') as tc:
 #     trainingParams = json.load(tc)
@@ -53,14 +52,14 @@ def _dataset_parser(value):
     example = tf.io.parse_single_example(value, featdef)
     # image = tf.io.decode_raw(example['image/encoded'], tf.uint8)
     image = tf.image.decode_jpeg(example['image/encoded'], channels=3)
-    # image.set_shape([3 * 224 * 224])
+    image.set_shape([3 * 224 * 224])
 
     # Reshape from [depth * height * width] to [depth, height, width].
-    # image = tf.cast(
-    #     tf.transpose(tf.reshape(image, [3, 224, 224]), [1, 2, 0]),
-    #     tf.float32)
+    image = tf.cast(
+        tf.transpose(tf.reshape(image, [3, 224, 224]), [1, 2, 0]),
+        tf.float32)
     label = tf.cast(example['image/source_id'], tf.int32)
-    # image = _train_preprocess_fn(image)
+    image = _train_preprocess_fn(image)
     return (image, label), label
 
 
@@ -157,19 +156,6 @@ def softmax_loss(y_true, y_pred):
     ce = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y_true,
                                                         logits=y_pred)
     return tf.reduce_mean(ce)
-
-
-def get_label(file_path):
-    parts = tf.strings.split(file_path, '/')
-    one_hot = tf.cast(parts[-2] == TRAIN_CLASS_NAMES, tf.float32)
-    return tf.argmax(one_hot), one_hot
-
-
-def process_path(file_path):
-    label, _ = get_label(file_path)
-    img = tf.io.read_file(file_path)
-    img = decode_img(img)
-    return (img, label), label
 
 
 def prepare_for_training(ds, cache=False, shuffle_buffer_size=2000):
