@@ -89,12 +89,12 @@ def main():
 
     # debug
 
-    img, label = next(iter(train_main_ds))
-    print(img[0])
-    print(label)
-    import cv2
-    cv2.imwrite('test.jpg', np.array(img[0]))
-    exit(0)
+    # img, label = next(iter(train_main_ds))
+    # print(img[0])
+    # print(label)
+    # import cv2
+    # cv2.imwrite('test.jpg', np.array(img[0]))
+    # exit(0)
     #
 
     model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], NUM_CLASSES, training=True)
