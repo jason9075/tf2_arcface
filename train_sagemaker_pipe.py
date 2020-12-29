@@ -115,7 +115,7 @@ def main():
     model.compile(optimizer=ranger, loss=softmax_loss)
     training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
-    checkpoint = ModelCheckpoint(
+    checkpoint = tf.keras.callbacks.ModelCheckpoint(
         os.path.join(ckpt_path, f"{training_date}_e_{{epoch}}"),
         save_freq=int(steps_per_epoch * FREQ_FACTOR))
     # verbose=1,
