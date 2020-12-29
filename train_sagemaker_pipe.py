@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
-from tensorflow.python.keras.callbacks import ModelCheckpoint, TensorBoard
+from tensorflow.python.keras.callbacks import TensorBoard
 
 from convert_tensorflow import create_training_model
 
@@ -117,6 +117,7 @@ def main():
 
     checkpoint = tf.keras.callbacks.ModelCheckpoint(
         os.path.join(ckpt_path, f"{training_date}_e_{{epoch}}"),
+        save_weights_only=True,
         save_freq=int(steps_per_epoch * FREQ_FACTOR))
     # verbose=1,
     # save_best_only=True,
