@@ -38,28 +38,26 @@ args = parser.parse_args()
 EPOCHS = int(args.epoch)
 IMAGE_SIZE = (int(args.image_size), int(args.image_size))
 BATCH_SIZE = int(args.batch_size)
+VALID_BATCH_SIZE = 3
 FREQ_FACTOR = int(args.freq_factor_by_number_of_epoch)
 NUM_CLASSES = int(args.num_of_class)
 TRAIN_IMAGE_COUNT = int(args.train_image_count)
+VALID_IMAGE_COUNT = int(args.valid_image_count)
 
 
-def _dataset_parser(value):
+def _dataset_parser(value, is_train):
     featdef = {
         'image/encoded': tf.io.FixedLenFeature([], tf.string),
         'image/source_id': tf.io.FixedLenFeature([], tf.int64),
     }
 
     example = tf.io.parse_single_example(value, featdef)
-    # image = tf.io.decode_raw(example['image/encoded'], tf.uint8)
     image = tf.image.decode_jpeg(example['image/encoded'], channels=3)
-    # image.set_shape([3 * 224 * 224])
-
-    # Reshape from [depth * height * width] to [depth, height, width].
-    # image = tf.cast(
-    #     tf.transpose(tf.reshape(image, [3, 224, 224]), [1, 2, 0]),
-    #     tf.float32)
     label = tf.cast(example['image/source_id'], tf.int32)
-    image = _train_preprocess_fn(image)
+    if is_train:
+        image = _train_preprocess_fn(image)
+    else:
+        image = _valid_preprocess_fn(image)
     return (image, label), label
 
 
@@ -78,14 +76,29 @@ def _train_preprocess_fn(img):
     return img
 
 
+def _valid_preprocess_fn(img):
+    img = tf.image.resize(img, IMAGE_SIZE)
+    img = tf.clip_by_value(img, clip_value_min=0.0, clip_value_max=255.0)
+    img = tf.subtract(img, 127.5)
+    img = tf.multiply(img, 0.0078125)
+
+    return img
+
+
 def main():
     from sagemaker_tensorflow import PipeModeDataset
     train_main_ds = PipeModeDataset(channel='train', record_format='TFRecord')
-    # train_main_ds = tf.data.TFRecordDataset('dataset/divide.tfrecord')
 
-    train_main_ds = train_main_ds.map(_dataset_parser, num_parallel_calls=AUTOTUNE)
+    train_main_ds = train_main_ds.map(lambda x: tf.py_function(_dataset_parser, [x], [True]),
+                                      num_parallel_calls=AUTOTUNE)
     train_main_ds = prepare_for_training(train_main_ds)
     steps_per_epoch = np.ceil(TRAIN_IMAGE_COUNT / BATCH_SIZE)
+
+    valid_main_ds = PipeModeDataset(channel='valid', record_format='TFRecord')
+    valid_main_ds = valid_main_ds.map(lambda x: tf.py_function(_dataset_parser, [x], [False]),
+                                      num_parallel_calls=AUTOTUNE)
+    valid_main_ds = prepare_for_training(valid_main_ds, is_train=False)
+    valid_steps_per_epoch = np.ceil(VALID_IMAGE_COUNT / VALID_BATCH_SIZE)
 
     # debug
 
@@ -133,6 +146,8 @@ def main():
     model.fit(train_main_ds,
               epochs=EPOCHS,
               steps_per_epoch=steps_per_epoch,
+              validation_data=valid_main_ds,
+              validation_steps=valid_steps_per_epoch,
               callbacks=[checkpoint, record],
               # initial_epoch=epochs - 1)
               )
@@ -160,16 +175,19 @@ def softmax_loss(y_true, y_pred):
     return tf.reduce_mean(ce)
 
 
-def prepare_for_training(ds, cache=False, shuffle_buffer_size=2000):
+def prepare_for_training(ds, cache=False, is_train=True, shuffle_buffer_size=2000):
     if cache:
         if isinstance(cache, str):
             ds = ds.cache(cache)
         else:
             ds = ds.cache()
 
-    ds = ds.shuffle(buffer_size=shuffle_buffer_size)
-    ds = ds.repeat()
-    ds = ds.batch(BATCH_SIZE)
+    if is_train:
+        ds = ds.shuffle(buffer_size=shuffle_buffer_size)
+        ds = ds.repeat()
+        ds = ds.batch(BATCH_SIZE)
+    else:
+        ds = ds.batch(VALID_BATCH_SIZE)
     ds = ds.prefetch(buffer_size=AUTOTUNE)
 
     return ds
