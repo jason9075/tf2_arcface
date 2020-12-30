@@ -46,7 +46,7 @@ TRAIN_IMAGE_COUNT = int(args.train_image_count)
 VALID_IMAGE_COUNT = int(args.valid_image_count)
 
 
-def _dataset_parser(value, is_train):
+def _dataset_parser_train(value):
     featdef = {
         'image/encoded': tf.io.FixedLenFeature([], tf.string),
         'image/source_id': tf.io.FixedLenFeature([], tf.int64),
@@ -55,10 +55,20 @@ def _dataset_parser(value, is_train):
     example = tf.io.parse_single_example(value, featdef)
     image = tf.image.decode_jpeg(example['image/encoded'], channels=3)
     label = tf.cast(example['image/source_id'], tf.int32)
-    if is_train:
-        image = _train_preprocess_fn(image)
-    else:
-        image = _valid_preprocess_fn(image)
+    image = _train_preprocess_fn(image)
+    return (image, label), label
+
+
+def _dataset_parser_valid(value):
+    featdef = {
+        'image/encoded': tf.io.FixedLenFeature([], tf.string),
+        'image/source_id': tf.io.FixedLenFeature([], tf.int64),
+    }
+
+    example = tf.io.parse_single_example(value, featdef)
+    image = tf.image.decode_jpeg(example['image/encoded'], channels=3)
+    label = tf.cast(example['image/source_id'], tf.int32)
+    image = _valid_preprocess_fn(image)
     return (image, label), label
 
 
@@ -90,13 +100,13 @@ def main():
     from sagemaker_tensorflow import PipeModeDataset
     train_main_ds = PipeModeDataset(channel='train', record_format='TFRecord')
 
-    train_main_ds = train_main_ds.map(lambda x: tf.py_function(_dataset_parser, [x], [True]),
+    train_main_ds = train_main_ds.map(_dataset_parser_train,
                                       num_parallel_calls=AUTOTUNE)
     train_main_ds = prepare_for_training(train_main_ds)
     steps_per_epoch = np.ceil(TRAIN_IMAGE_COUNT / BATCH_SIZE)
 
     valid_main_ds = PipeModeDataset(channel='valid', record_format='TFRecord')
-    valid_main_ds = valid_main_ds.map(lambda x: tf.py_function(_dataset_parser, [x], [False]),
+    valid_main_ds = valid_main_ds.map(_dataset_parser_valid,
                                       num_parallel_calls=AUTOTUNE)
     valid_main_ds = prepare_for_training(valid_main_ds, is_train=False)
     valid_steps_per_epoch = np.ceil(VALID_IMAGE_COUNT / VALID_BATCH_SIZE)
@@ -152,19 +162,6 @@ def main():
               callbacks=[checkpoint, record],
               # initial_epoch=epochs - 1)
               )
-
-
-def decode_img(img):
-    img = tf.image.decode_jpeg(img, channels=3)
-    img = tf.image.resize(img, IMAGE_SIZE)
-    img = tf.image.random_brightness(img, 0.2)
-    img = tf.image.random_saturation(img, 0.6, 1.6)
-    img = tf.image.random_contrast(img, 0.6, 1.4)
-    img = tf.image.random_flip_left_right(img)
-    img = tf.clip_by_value(img, clip_value_min=0.0, clip_value_max=255.0)
-    img = tf.subtract(img, 127.5)
-    img = tf.multiply(img, 0.0078125)
-    return img
 
 
 def softmax_loss(y_true, y_pred):
