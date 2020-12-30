@@ -20,6 +20,7 @@ parser.add_argument('--pretrained', default="", help='pretrained')
 parser.add_argument('--task_name', default="fr-train", help='task_name')
 parser.add_argument('--num_of_class', default=353, help='num_of_class')
 parser.add_argument('--train_image_count', default=6382, help='train_image_count')
+parser.add_argument('--valid_image_count', default=300, help='train_image_count')
 
 prefix = '/opt/ml/'
 
