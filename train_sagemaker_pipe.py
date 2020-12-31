@@ -123,20 +123,21 @@ def main():
 
     model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], NUM_CLASSES, training=True)
 
-    # download pre trained weight
-    import boto3
-    s3 = boto3.client('s3')
-    s3.download_file('astra-face-recognition-dataset',
-                     f'pretrained/{args.pretrained}',
-                     os.path.join('saved_model', args.pretrained))
-
-    model.load_weights(os.path.join('saved_model', args.pretrained), by_name=True)
     # model.summary()
 
     radam = tfa.optimizers.RectifiedAdam()
     ranger = tfa.optimizers.Lookahead(radam, sync_period=6, slow_step_size=0.5)
 
     model.compile(optimizer=ranger, loss=softmax_loss)
+    
+    # download pre trained weight
+    import boto3
+    s3 = boto3.client('s3')
+    s3.download_file('astra-face-recognition-dataset',
+                     f'pretrained/{args.pretrained}',
+                     os.path.join('saved_model', args.pretrained))
+    model.load_weights(os.path.join('saved_model', args.pretrained), by_name=True)
+
     training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
     checkpoint = tf.keras.callbacks.ModelCheckpoint(
