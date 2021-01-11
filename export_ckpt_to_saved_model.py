@@ -5,7 +5,7 @@ VERSION = 1
 
 
 def main():
-    model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], 1, training=False)
+    model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], 1, mode='infer')
 
     model.load_weights('checkpoints/2020-11-18-08-51-21_e_400.ckpt')
 

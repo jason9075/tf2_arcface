@@ -45,3 +45,6 @@ class ArcMarginPenalty(tf.keras.layers.Layer):
         logist = tf.multiply(logist, self.logit_scale, 'arcface_logist')
 
         return logist
+
+    def get_config(self):
+        return {}

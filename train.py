@@ -38,7 +38,7 @@ def main():
     train_main_ds = train_list_ds.map(process_path, num_parallel_calls=AUTOTUNE)
     train_main_ds = prepare_for_training(train_main_ds)
 
-    model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], num_of_class, training=True)
+    model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], num_of_class, mode='train')
 
     if RETRAIN:
         ckpt_path = tf.train.latest_checkpoint('checkpoints/')
@@ -50,7 +50,7 @@ def main():
     radam = tfa.optimizers.RectifiedAdam()
     ranger = tfa.optimizers.Lookahead(radam, sync_period=6, slow_step_size=0.5)
 
-    model.compile(optimizer=ranger, loss=softmax_loss)
+    model.compile(optimizer=ranger, loss=softmax_loss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
     training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
     checkpoint = ModelCheckpoint(

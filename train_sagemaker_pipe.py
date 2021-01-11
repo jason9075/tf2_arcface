@@ -121,15 +121,15 @@ def main():
     # exit(0)
     #
 
-    model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], NUM_CLASSES, training=True)
+    model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], NUM_CLASSES, mode='train')
 
     # model.summary()
 
     radam = tfa.optimizers.RectifiedAdam()
     ranger = tfa.optimizers.Lookahead(radam, sync_period=6, slow_step_size=0.5)
 
-    model.compile(optimizer=ranger, loss=softmax_loss)
-    
+    model.compile(optimizer=ranger, loss=softmax_loss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
+
     # download pre trained weight
     import boto3
     s3 = boto3.client('s3')

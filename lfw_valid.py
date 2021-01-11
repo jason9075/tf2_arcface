@@ -10,7 +10,7 @@ BATCH_SUZE = 32
 
 
 def main():
-    model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], 1, training=False)
+    model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], 1, mode='infer')
 
     model.load_weights('checkpoints/e_500.ckpt')
 
