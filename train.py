@@ -15,42 +15,36 @@ load_dotenv()
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 TRAIN_CLASS_NAMES = np.array([])
 
-TRAIN_DATA_PATH = os.getenv("TRAIN_DATA_PATH")
-VALID_DATA_PATH = os.getenv("VALID_DATA_PATH")
 EPOCHS = int(os.getenv("EPOCHS"))
 IMAGE_SIZE = (224, 224)
-RETRAIN = False
+RETRAIN = True
 
 BATCH_SIZE = int(os.getenv("BATCH_SIZE"))
 
+image_feature_description = {
+    'image/source_id': tf.io.FixedLenFeature([], tf.int64),
+    'image/filename': tf.io.FixedLenFeature([], tf.string),
+    'image/encoded': tf.io.FixedLenFeature([], tf.string),
+}
+
 
 def main():
-    train_main_ds = tf.data.TFRecordDataset('dataset/20000_dataset_aug.tfrecord')
-    image_feature_description = {
-        'image/source_id': tf.io.FixedLenFeature([], tf.int64),
-        'image/filename': tf.io.FixedLenFeature([], tf.string),
-        'image/encoded': tf.io.FixedLenFeature([], tf.string),
-    }
+    train_main_ds = tf.data.TFRecordDataset('dataset/20000_dataset_cc.tfrecord')
+    valid_main_ds = tf.data.TFRecordDataset('dataset/20000_dataset_aug.tfrecord')
 
-    def _parse_image_function(example_proto):
-        data = tf.io.parse_single_example(example_proto, image_feature_description)
-        img = data['image/encoded']
-        label = data['image/source_id']
-
-        img = tf.image.decode_jpeg(img, channels=3)
-        img = tf.image.resize(img, IMAGE_SIZE)
-        img = tf.clip_by_value(img, clip_value_min=0.0, clip_value_max=255.0)
-        img = tf.subtract(img, 127.5)
-        img = tf.multiply(img, 0.0078125)
-
-        return (img, label), label
-
-    train_main_ds = train_main_ds.map(_parse_image_function, num_parallel_calls=AUTOTUNE)
+    train_main_ds = train_main_ds.map(_parse_image_aug_function, num_parallel_calls=AUTOTUNE)
+    train_main_ds = train_main_ds.shuffle(buffer_size=20000)
+    train_main_ds = train_main_ds.repeat()
     train_main_ds = train_main_ds.batch(BATCH_SIZE)
+
+    valid_main_ds = valid_main_ds.map(_parse_image_function, num_parallel_calls=AUTOTUNE)
+    valid_main_ds = valid_main_ds.batch(BATCH_SIZE)
 
     num_of_class = 20000
     num_of_train_images = 663118
-    steps_per_epoch = num_of_train_images //BATCH_SIZE
+    num_of_valid_images = 60000
+    steps_per_epoch = num_of_train_images // BATCH_SIZE
+    valid_steps_per_epoch = num_of_valid_images // BATCH_SIZE
     model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], num_of_class, mode='train')
 
     if RETRAIN:
@@ -72,7 +66,7 @@ def main():
         save_best_only=True,
         save_weights_only=True)
 
-    record = TensorBoard(log_dir='saved_model/',
+    record = TensorBoard(log_dir='tensorboard/',
                          update_freq=1,
                          profile_batch=0)
 
@@ -83,11 +77,30 @@ def main():
               epochs=EPOCHS,
               steps_per_epoch=steps_per_epoch,
               callbacks=[checkpoint, record],
-              # initial_epoch=epochs - 1)
+              validation_data=valid_main_ds,
+              validation_steps=valid_steps_per_epoch,
               )
 
 
-def decode_img(img):
+def _parse_image_function(example_proto):
+    data = tf.io.parse_single_example(example_proto, image_feature_description)
+    img = data['image/encoded']
+    label = data['image/source_id']
+
+    img = tf.image.decode_jpeg(img, channels=3)
+    img = tf.image.resize(img, IMAGE_SIZE)
+    img = tf.clip_by_value(img, clip_value_min=0.0, clip_value_max=255.0)
+    img = tf.subtract(img, 127.5)
+    img = tf.multiply(img, 0.0078125)
+
+    return (img, label), label
+
+
+def _parse_image_aug_function(example_proto):
+    data = tf.io.parse_single_example(example_proto, image_feature_description)
+    img = data['image/encoded']
+    label = data['image/source_id']
+
     img = tf.image.decode_jpeg(img, channels=3)
     img = tf.image.resize(img, IMAGE_SIZE)
     img = tf.image.random_brightness(img, 0.2)
@@ -97,7 +110,8 @@ def decode_img(img):
     img = tf.clip_by_value(img, clip_value_min=0.0, clip_value_max=255.0)
     img = tf.subtract(img, 127.5)
     img = tf.multiply(img, 0.0078125)
-    return img
+
+    return (img, label), label
 
 
 def softmax_loss(y_true, y_pred):
@@ -107,34 +121,6 @@ def softmax_loss(y_true, y_pred):
     ce = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y_true,
                                                         logits=y_pred)
     return tf.reduce_mean(ce)
-
-
-def get_label(file_path):
-    parts = tf.strings.split(file_path, '/')
-    one_hot = tf.cast(parts[-2] == TRAIN_CLASS_NAMES, tf.float32)
-    return tf.argmax(one_hot), one_hot
-
-
-def process_path(file_path):
-    label, _ = get_label(file_path)
-    img = tf.io.read_file(file_path)
-    img = decode_img(img)
-    return (img, label), label
-
-
-def prepare_for_training(ds, cache=False, shuffle_buffer_size=2000):
-    if cache:
-        if isinstance(cache, str):
-            ds = ds.cache(cache)
-        else:
-            ds = ds.cache()
-
-    ds = ds.shuffle(buffer_size=shuffle_buffer_size)
-    ds = ds.repeat()
-    ds = ds.batch(BATCH_SIZE)
-    ds = ds.prefetch(buffer_size=AUTOTUNE)
-
-    return ds
 
 
 if __name__ == '__main__':
