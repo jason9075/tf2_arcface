@@ -25,19 +25,32 @@ BATCH_SIZE = int(os.getenv("BATCH_SIZE"))
 
 
 def main():
-    global TRAIN_CLASS_NAMES
+    train_main_ds = tf.data.TFRecordDataset('dataset/20000_dataset_aug.tfrecord')
+    image_feature_description = {
+        'image/source_id': tf.io.FixedLenFeature([], tf.int64),
+        'image/filename': tf.io.FixedLenFeature([], tf.string),
+        'image/encoded': tf.io.FixedLenFeature([], tf.string),
+    }
 
-    train_data_dir = pathlib.Path(TRAIN_DATA_PATH)
-    train_list_ds = tf.data.Dataset.list_files(str(train_data_dir / '*/*.jpg'))
-    TRAIN_CLASS_NAMES = np.array(
-        [item.name for item in train_data_dir.glob('*') if item.name not in [".keep", ".DS_Store"]])
-    num_of_class = len(TRAIN_CLASS_NAMES)
-    train_image_count = len(list(train_data_dir.glob('*/*.jpg')))
-    steps_per_epoch = np.ceil(train_image_count / BATCH_SIZE)
+    def _parse_image_function(example_proto):
+        data = tf.io.parse_single_example(example_proto, image_feature_description)
+        img = data['image/encoded']
+        label = data['image/source_id']
 
-    train_main_ds = train_list_ds.map(process_path, num_parallel_calls=AUTOTUNE)
-    train_main_ds = prepare_for_training(train_main_ds)
+        img = tf.image.decode_jpeg(img, channels=3)
+        img = tf.image.resize(img, IMAGE_SIZE)
+        img = tf.clip_by_value(img, clip_value_min=0.0, clip_value_max=255.0)
+        img = tf.subtract(img, 127.5)
+        img = tf.multiply(img, 0.0078125)
 
+        return (img, label), label
+
+    train_main_ds = train_main_ds.map(_parse_image_function, num_parallel_calls=AUTOTUNE)
+    train_main_ds = train_main_ds.batch(BATCH_SIZE)
+
+    num_of_class = 20000
+    num_of_train_images = 663118
+    steps_per_epoch = num_of_train_images //BATCH_SIZE
     model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], num_of_class, mode='train')
 
     if RETRAIN:
