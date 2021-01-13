@@ -4,11 +4,14 @@ import random
 from collections import Set, OrderedDict
 from itertools import count
 
+import cv2
 import tensorflow as tf
 import tqdm
 
-DATA_PATH = 'dataset/divide'
-OUTPUT_PATH = 'dataset/divide.tfrecord'
+TOTAL_IDS = 10
+DATA_PATH = 'dataset/divide_aug'
+output_name = DATA_PATH.split('/')[-1]
+OUTPUT_PATH = os.path.join('dataset', f'{TOTAL_IDS}_{output_name}.tfrecord')
 
 
 class IndexOrderedSet(Set):
@@ -63,18 +66,31 @@ def make_example(img_str, source_id, filename):
 def main():
     id_set = IndexOrderedSet()
     samples = []
-    for id_name in tqdm.tqdm(os.listdir(DATA_PATH)):
+    id_folders = os.listdir(DATA_PATH)
+    id_dict = {}
+
+    if TOTAL_IDS != -1:
+        id_folders = id_folders[:TOTAL_IDS]
+
+    id_count = 0
+    for id_name in tqdm.tqdm(id_folders):
+        id_dict[id_name] = id_count
         img_paths = glob.glob(os.path.join(DATA_PATH, id_name, '*.jpg'))
         for img_path in img_paths:
             id_set.add(id_name)
             filename = os.path.join(id_name, os.path.basename(img_path))
             samples.append((img_path, id_name, filename))
+
+        id_count += 1
     random.shuffle(samples)
 
     with tf.io.TFRecordWriter(OUTPUT_PATH) as writer:
         for img_path, id_name, filename in tqdm.tqdm(samples):
-            tf_example = make_example(img_str=open(img_path, 'rb').read(),
-                                      source_id=id_set.index(id_name),
+            img = cv2.imread(img_path)
+
+            cv2.imwrite("temp.jpg", img)
+            tf_example = make_example(img_str=open("temp.jpg", 'rb').read(),
+                                      source_id=id_dict[id_name],
                                       filename=str.encode(filename))
             writer.write(tf_example.SerializeToString())
 
@@ -82,5 +98,23 @@ def main():
     print(f'Total samples: {len(samples)}')
 
 
+def test():
+    raw_dataset = tf.data.TFRecordDataset('dataset/10_divide.tfrecord')
+    image_feature_description = {
+        'image/source_id': tf.io.FixedLenFeature([], tf.int64),
+        'image/filename': tf.io.FixedLenFeature([], tf.string),
+        'image/encoded': tf.io.FixedLenFeature([], tf.string),
+    }
+
+    def _parse_image_function(example_proto):
+        return tf.io.parse_single_example(example_proto, image_feature_description)
+
+    parsed_image_dataset = raw_dataset.map(_parse_image_function)
+
+    for image_features in parsed_image_dataset:
+        image_raw = image_features['image/source_id'].numpy()
+
+
 if __name__ == '__main__':
-    main()
+    # main()
+    test()
