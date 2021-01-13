@@ -33,7 +33,7 @@ def main():
     valid_main_ds = tf.data.TFRecordDataset('dataset/20000_dataset_aug.tfrecord')
 
     train_main_ds = train_main_ds.map(_parse_image_aug_function, num_parallel_calls=AUTOTUNE)
-    train_main_ds = train_main_ds.shuffle(buffer_size=20000)
+    train_main_ds = train_main_ds.shuffle(buffer_size=2000)
     train_main_ds = train_main_ds.repeat()
     train_main_ds = train_main_ds.batch(BATCH_SIZE)
 
@@ -43,8 +43,8 @@ def main():
     num_of_class = 20000
     num_of_train_images = 663118
     num_of_valid_images = 60000
-    steps_per_epoch = num_of_train_images // BATCH_SIZE
-    valid_steps_per_epoch = num_of_valid_images // BATCH_SIZE
+    steps_per_epoch = num_of_train_images // BATCH_SIZE + 1
+    valid_steps_per_epoch = num_of_valid_images // BATCH_SIZE + 1
     model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], num_of_class, mode='train')
 
     if RETRAIN:
@@ -62,7 +62,10 @@ def main():
 
     checkpoint = ModelCheckpoint(
         f"checkpoints/{training_date}_e_{{epoch}}.ckpt",
-        save_freq=int(steps_per_epoch * 10), verbose=1,
+        save_freq='epoch',
+        monitor='val_loss',
+        mode='min',
+        verbose=1,
         save_best_only=True,
         save_weights_only=True)
 
@@ -71,7 +74,7 @@ def main():
                          profile_batch=0)
 
     record._total_batches_seen = steps_per_epoch
-    record._samples_seen = steps_per_epoch * BATCH_SIZE
+    record._samples_seen = num_of_train_images
 
     model.fit(train_main_ds,
               epochs=EPOCHS,
