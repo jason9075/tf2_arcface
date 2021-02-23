@@ -16,10 +16,16 @@ AUTOTUNE = tf.data.experimental.AUTOTUNE
 TRAIN_CLASS_NAMES = np.array([])
 
 EPOCHS = int(os.getenv("EPOCHS"))
-IMAGE_SIZE = (224, 224)
-RETRAIN = True
+# IMAGE_SIZE = (224, 224)
+IMAGE_SIZE = (112, 112)
+RETRAIN = False
 
 BATCH_SIZE = int(os.getenv("BATCH_SIZE"))
+LEARNING_RATE = float(os.getenv("LEARNING_RATE"))
+TRAIN_RECORD_PATH = os.getenv("TRAIN_RECORD_PATH")
+VALID_RECORD_PATH = os.getenv("VALID_RECORD_PATH")
+MODEL_TYPE = 'resnet50'  # (resnet50|se_resnet50)
+RESTORE_FILE_PATH = 'saved_model/insightface.h5'
 
 image_feature_description = {
     'image/source_id': tf.io.FixedLenFeature([], tf.int64),
@@ -29,8 +35,8 @@ image_feature_description = {
 
 
 def main():
-    train_main_ds = tf.data.TFRecordDataset('dataset/20000_dataset_cc.tfrecord')
-    valid_main_ds = tf.data.TFRecordDataset('dataset/20000_dataset_aug.tfrecord')
+    train_main_ds = tf.data.TFRecordDataset(TRAIN_RECORD_PATH)
+    valid_main_ds = tf.data.TFRecordDataset(VALID_RECORD_PATH)
 
     train_main_ds = train_main_ds.map(_parse_image_aug_function, num_parallel_calls=AUTOTUNE)
     train_main_ds = train_main_ds.shuffle(buffer_size=2000)
@@ -38,6 +44,7 @@ def main():
     train_main_ds = train_main_ds.batch(BATCH_SIZE)
 
     valid_main_ds = valid_main_ds.map(_parse_image_function, num_parallel_calls=AUTOTUNE)
+    valid_main_ds = valid_main_ds.repeat()
     valid_main_ds = valid_main_ds.batch(BATCH_SIZE)
 
     num_of_class = 20000
@@ -45,16 +52,12 @@ def main():
     num_of_valid_images = 60000
     steps_per_epoch = num_of_train_images // BATCH_SIZE + 1
     valid_steps_per_epoch = num_of_valid_images // BATCH_SIZE + 1
-    model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], num_of_class, mode='train')
+    model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], num_of_class, mode='train', model_type=MODEL_TYPE)
 
-    if RETRAIN:
-        ckpt_path = tf.train.latest_checkpoint('checkpoints/')
-        model.load_weights(ckpt_path)
-    else:
-        model.load_weights('saved_model/tf_pretrain_weight.h5', by_name=True)
+    model = restore_weight(model, restore_latest_ckpt=False, h5_filepath=RESTORE_FILE_PATH)
     model.summary()
 
-    radam = tfa.optimizers.RectifiedAdam()
+    radam = tfa.optimizers.RectifiedAdam(LEARNING_RATE)
     ranger = tfa.optimizers.Lookahead(radam, sync_period=6, slow_step_size=0.5)
 
     model.compile(optimizer=ranger, loss=softmax_loss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
@@ -70,7 +73,7 @@ def main():
         save_weights_only=True)
 
     record = TensorBoard(log_dir='tensorboard/',
-                         update_freq=1,
+                         update_freq='epoch',
                          profile_batch=0)
 
     record._total_batches_seen = steps_per_epoch
@@ -83,6 +86,16 @@ def main():
               validation_data=valid_main_ds,
               validation_steps=valid_steps_per_epoch,
               )
+
+
+def restore_weight(model, restore_latest_ckpt, h5_filepath):
+    if restore_latest_ckpt:
+        ckpt_path = tf.train.latest_checkpoint('checkpoints/')
+        model.load_weights(ckpt_path)
+    else:
+        model.load_weights(h5_filepath, by_name=True)
+
+    return model
 
 
 def _parse_image_function(example_proto):

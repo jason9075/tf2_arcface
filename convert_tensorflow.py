@@ -1,18 +1,22 @@
 import tensorflow as tf
 
 from loss_func.loss import ArcMarginPenalty
+from model.resnet50 import create_resnet50
 from model.se_resnet50 import create_se_resnet50
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
-IMAGE_SIZE = (224, 224)
-
 
 def create_training_model(input_shape, layers, num_of_class, embedding_size=128,
-                          mode='infer', margin=0.5, logit_scale=64):
+                          mode='infer', margin=0.5, logit_scale=64, model_type='se_resnet50'):
     input_node = tf.keras.layers.Input(shape=(input_shape[0], input_shape[1], 3))
 
-    net = create_se_resnet50(input_node, layers)
+    if model_type == 'se_resnet50':
+        net = create_se_resnet50(input_node, layers)
+    elif model_type == 'resnet50':
+        net = create_resnet50(input_node, layers=[3, 4, 14, 3])
+    else:
+        raise RuntimeError('type not exist')
 
     if mode == 'train':
         labels = tf.keras.layers.Input([], name='labels')
@@ -38,7 +42,7 @@ def create_training_model(input_shape, layers, num_of_class, embedding_size=128,
 
 
 def main():
-    model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], 1, mode='infer')
+    model = create_training_model((224, 224), [3, 4, 6, 3], 1, mode='infer')
 
     from backend.utils import load_weight
     load_weight(model, 'pytorch_pretrained/se_resnet50-ce0d4300.pth', trainable=False, verbose=False)

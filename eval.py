@@ -6,7 +6,7 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 
 from convert_tensorflow import create_training_model
-from train import process_path, softmax_loss
+from train import softmax_loss
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 TRAIN_CLASS_NAMES = np.array([])

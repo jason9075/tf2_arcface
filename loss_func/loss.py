@@ -17,7 +17,7 @@ class ArcMarginPenalty(tf.keras.layers.Layer):
         self.mm = None
 
     def build(self, input_shape):
-        self.w = self.add_variable(
+        self.w = self.add_weight(
             "weights", shape=[self.embedding_size, self.num_classes])
         self.cos_m = tf.identity(math.cos(self.margin), name='cos_m')
         self.sin_m = tf.identity(math.sin(self.margin), name='sin_m')
