@@ -32,9 +32,10 @@ param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
-# with open(param_path, 'r') as tc:
-#     trainingParams = json.load(tc)
-
+gpus = tf.config.experimental.list_physical_devices('GPU')
+print(gpus)
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
 strategy = tf.distribute.MirroredStrategy()
 print("MirroredStrategy REPLICAS: ", strategy.num_replicas_in_sync)
 
@@ -48,11 +49,6 @@ FREQ_FACTOR = int(args.freq_factor_by_number_of_epoch)
 NUM_CLASSES = int(args.num_of_class)
 TRAIN_IMAGE_COUNT = int(args.train_image_count)
 VALID_IMAGE_COUNT = int(args.valid_image_count)
-
-gpus = tf.config.experimental.list_physical_devices('GPU')
-print(gpus)
-for gpu in gpus:
-    tf.config.experimental.set_memory_growth(gpu, True)
 
 
 def _dataset_parser_train(value):
