@@ -45,6 +45,7 @@ TRAIN_DATA_PATH = os.path.join(input_path, 'train')
 EPOCHS = int(args.epoch)
 IMAGE_SIZE = (int(args.image_size), int(args.image_size))
 BATCH_SIZE = int(args.batch_size) * strategy.num_replicas_in_sync
+VALID_BATCH_SIZE=3
 FREQ_FACTOR = int(args.freq_factor_by_number_of_epoch)
 NUM_CLASSES = int(args.num_of_class)
 TRAIN_IMAGE_COUNT = int(args.train_image_count)
@@ -114,7 +115,7 @@ def main():
     valid_main_ds = valid_main_ds.map(_dataset_parser_valid,
                                       num_parallel_calls=AUTOTUNE)
     valid_main_ds = prepare_for_training(valid_main_ds, is_train=False)
-    valid_steps_per_epoch = np.ceil(VALID_IMAGE_COUNT / BATCH_SIZE)
+    valid_steps_per_epoch = np.ceil(VALID_IMAGE_COUNT / VALID_BATCH_SIZE)
 
     with strategy.scope():
         model = create_training_model(IMAGE_SIZE, NUM_CLASSES, mode='train', model_type='mobilenetv3')
@@ -167,16 +168,19 @@ def softmax_loss(y_true, y_pred):
     return tf.reduce_mean(ce)
 
 
-def prepare_for_training(ds, cache=False, shuffle_buffer_size=2000):
+def prepare_for_training(ds, cache=False, is_train=True, shuffle_buffer_size=2000):
     if cache:
         if isinstance(cache, str):
             ds = ds.cache(cache)
         else:
             ds = ds.cache()
 
-    ds = ds.shuffle(buffer_size=shuffle_buffer_size)
-    ds = ds.repeat()
-    ds = ds.batch(BATCH_SIZE)
+    if is_train:
+        ds = ds.shuffle(buffer_size=shuffle_buffer_size)
+        ds = ds.repeat()
+        ds = ds.batch(BATCH_SIZE)
+    else:
+        ds = ds.batch(VALID_BATCH_SIZE)
     ds = ds.prefetch(buffer_size=AUTOTUNE)
 
     return ds
