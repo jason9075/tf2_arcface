@@ -45,7 +45,7 @@ TRAIN_DATA_PATH = os.path.join(input_path, 'train')
 EPOCHS = int(args.epoch)
 IMAGE_SIZE = (int(args.image_size), int(args.image_size))
 BATCH_SIZE = int(args.batch_size) * strategy.num_replicas_in_sync
-VALID_BATCH_SIZE=3
+VALID_BATCH_SIZE = 3 * strategy.num_replicas_in_sync
 FREQ_FACTOR = int(args.freq_factor_by_number_of_epoch)
 NUM_CLASSES = int(args.num_of_class)
 TRAIN_IMAGE_COUNT = int(args.train_image_count)
@@ -131,6 +131,7 @@ def main():
 
     callbacks.append(ModelCheckpoint(
         os.path.join(ckpt_path, f"{training_date}_e_{{epoch}}"),
+        save_weights_only=True,
         save_freq=int(steps_per_epoch * FREQ_FACTOR)))
     callbacks.append(TensorBoard(log_dir=tb_path,
                                  update_freq=int(steps_per_epoch * FREQ_FACTOR),
