@@ -19,6 +19,9 @@ parser.add_argument('--image_size', default=224, help='image_size')
 parser.add_argument('--model_dir', default="", help='model_dir')
 parser.add_argument('--pretrained', default="", help='pretrained')
 parser.add_argument('--task_name', default="fr-train", help='task_name')
+parser.add_argument('--num_of_class', default=353, help='num_of_class')
+parser.add_argument('--train_image_count', default=6382, help='train_image_count')
+parser.add_argument('--valid_image_count', default=300, help='valid_image_count')
 
 prefix = '/opt/ml/'
 
@@ -28,7 +31,6 @@ tb_path = os.path.join(prefix, 'model', 'tensorboard')
 param_path = os.path.join(prefix, 'input/config/hyperparameters.json')
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
-TRAIN_CLASS_NAMES = np.array([])
 
 # with open(param_path, 'r') as tc:
 #     trainingParams = json.load(tc)
@@ -43,7 +45,9 @@ EPOCHS = int(args.epoch)
 IMAGE_SIZE = (int(args.image_size), int(args.image_size))
 BATCH_SIZE = int(args.batch_size) * strategy.num_replicas_in_sync
 FREQ_FACTOR = int(args.freq_factor_by_number_of_epoch)
-
+NUM_CLASSES = int(args.num_of_class)
+TRAIN_IMAGE_COUNT = int(args.train_image_count)
+VALID_IMAGE_COUNT = int(args.valid_image_count)
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
 print(gpus)
@@ -51,22 +55,73 @@ for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
 
 
+def _dataset_parser_train(value):
+    featdef = {
+        'image/encoded': tf.io.FixedLenFeature([], tf.string),
+        'image/source_id': tf.io.FixedLenFeature([], tf.int64),
+    }
+
+    example = tf.io.parse_single_example(value, featdef)
+    image = tf.image.decode_jpeg(example['image/encoded'], channels=3)
+    label = tf.cast(example['image/source_id'], tf.int32)
+    image = _train_preprocess_fn(image)
+    return (image, label), label
+
+
+def _dataset_parser_valid(value):
+    featdef = {
+        'image/encoded': tf.io.FixedLenFeature([], tf.string),
+        'image/source_id': tf.io.FixedLenFeature([], tf.int64),
+    }
+
+    example = tf.io.parse_single_example(value, featdef)
+    image = tf.image.decode_jpeg(example['image/encoded'], channels=3)
+    label = tf.cast(example['image/source_id'], tf.int32)
+    image = _valid_preprocess_fn(image)
+    return (image, label), label
+
+
+def _train_preprocess_fn(img):
+    """Preprocess a single training image of layout [height, width, depth]."""
+    # Resize the image to add four extra pixels on each side.
+    img = tf.image.resize(img, IMAGE_SIZE)
+    img = tf.image.random_brightness(img, 0.2)
+    img = tf.image.random_saturation(img, 0.6, 1.6)
+    img = tf.image.random_contrast(img, 0.6, 1.4)
+    img = tf.image.random_flip_left_right(img)
+    img = tf.clip_by_value(img, clip_value_min=0.0, clip_value_max=255.0)
+    img = tf.subtract(img, 127.5)
+    img = tf.multiply(img, 0.0078125)
+
+    return img
+
+
+def _valid_preprocess_fn(img):
+    img = tf.image.resize(img, IMAGE_SIZE)
+    img = tf.clip_by_value(img, clip_value_min=0.0, clip_value_max=255.0)
+    img = tf.subtract(img, 127.5)
+    img = tf.multiply(img, 0.0078125)
+
+    return img
+
+
 def main():
-    global TRAIN_CLASS_NAMES
+    from sagemaker_tensorflow import PipeModeDataset
+    train_main_ds = PipeModeDataset(channel='train', record_format='TFRecord')
 
-    train_data_dir = pathlib.Path(TRAIN_DATA_PATH)
-    train_list_ds = tf.data.Dataset.list_files(str(train_data_dir / '*/*.jpg'))
-    TRAIN_CLASS_NAMES = np.array(
-        [item.name for item in train_data_dir.glob('*') if item.name not in [".keep", ".DS_Store"]])
-    num_of_class = len(TRAIN_CLASS_NAMES)
-    train_image_count = len(list(train_data_dir.glob('*/*.jpg')))
-    steps_per_epoch = np.ceil(train_image_count // BATCH_SIZE)
-
-    train_main_ds = train_list_ds.map(process_path, num_parallel_calls=AUTOTUNE)
+    train_main_ds = train_main_ds.map(_dataset_parser_train,
+                                      num_parallel_calls=AUTOTUNE)
     train_main_ds = prepare_for_training(train_main_ds)
+    steps_per_epoch = np.ceil(TRAIN_IMAGE_COUNT / BATCH_SIZE)
+
+    valid_main_ds = PipeModeDataset(channel='valid', record_format='TFRecord')
+    valid_main_ds = valid_main_ds.map(_dataset_parser_valid,
+                                      num_parallel_calls=AUTOTUNE)
+    valid_main_ds = prepare_for_training(valid_main_ds, is_train=False)
+    valid_steps_per_epoch = np.ceil(VALID_IMAGE_COUNT / BATCH_SIZE)
 
     with strategy.scope():
-        model = create_training_model(IMAGE_SIZE, num_of_class, mode='train', model_type='mobilenetv3')
+        model = create_training_model(IMAGE_SIZE, NUM_CLASSES, mode='train', model_type='mobilenetv3')
 
     # model.summary()
 
@@ -87,8 +142,9 @@ def main():
     model.fit(train_main_ds,
               epochs=EPOCHS,
               steps_per_epoch=steps_per_epoch,
+              validation_data=valid_main_ds,
+              validation_steps=valid_steps_per_epoch,
               callbacks=callbacks,
-              verbose=1
               # initial_epoch=epochs - 1)
               )
 
@@ -113,19 +169,6 @@ def softmax_loss(y_true, y_pred):
     ce = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y_true,
                                                         logits=y_pred)
     return tf.reduce_mean(ce)
-
-
-def get_label(file_path):
-    parts = tf.strings.split(file_path, '/')
-    one_hot = tf.cast(parts[-2] == TRAIN_CLASS_NAMES, tf.float32)
-    return tf.argmax(one_hot), one_hot
-
-
-def process_path(file_path):
-    label, _ = get_label(file_path)
-    img = tf.io.read_file(file_path)
-    img = decode_img(img)
-    return (img, label), label
 
 
 def prepare_for_training(ds, cache=False, shuffle_buffer_size=2000):
