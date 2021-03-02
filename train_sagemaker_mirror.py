@@ -1,4 +1,3 @@
-import tensorflow_datasets as tfds
 import datetime
 import os
 import pathlib
@@ -12,7 +11,16 @@ from tensorflow.keras.optimizers import Adam
 
 from convert_tensorflow import create_training_model
 
-tfds.disable_progress_bar()
+#  https://github.com/tqdm/tqdm/issues/619  #
+import tqdm
+
+
+def nop(it, *a, **k):
+    return it
+
+
+tqdm.tqdm = nop
+###
 
 parser = ArgumentParser()
 parser.add_argument('--batch_size', default=16, help='batch_size')
