@@ -131,8 +131,13 @@ def main():
 
     callbacks.append(ModelCheckpoint(
         os.path.join(ckpt_path, f"{training_date}_e_{{epoch}}"),
+        save_freq='epoch',
+        mode='min',
+        monitor='val_loss',
+        verbose=1,
+        save_best_only=True,
         save_weights_only=True,
-        save_freq=int(steps_per_epoch * FREQ_FACTOR)))
+        ))
     callbacks.append(TensorBoard(log_dir=tb_path,
                                  update_freq=int(steps_per_epoch * FREQ_FACTOR),
                                  profile_batch=0))
