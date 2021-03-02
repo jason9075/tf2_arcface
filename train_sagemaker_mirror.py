@@ -118,7 +118,7 @@ def main():
     valid_steps_per_epoch = np.ceil(VALID_IMAGE_COUNT / VALID_BATCH_SIZE)
 
     with strategy.scope():
-        model = create_training_model(IMAGE_SIZE, NUM_CLASSES, mode='train', model_type='mobilenetv3')
+        model = create_training_model(IMAGE_SIZE, NUM_CLASSES, mode='train', model_type='mobilenetv2')
 
     # model.summary()
 

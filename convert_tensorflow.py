@@ -1,6 +1,7 @@
 import tensorflow as tf
 
 from loss_func.loss import ArcMarginPenalty
+from model.mobilenetv2 import create_mobilenetv2
 from model.mobilenetv3 import create_mobilenetv3
 from model.resnet50 import create_resnet50
 from model.se_resnet50 import create_se_resnet50
@@ -20,6 +21,8 @@ def create_training_model(input_shape, num_of_class, embedding_size=128,
         net = create_resnet50(input_node, layers=[3, 4, 14, 3], is_train=is_train)
     elif model_type == 'mobilenetv3':
         net = create_mobilenetv3(input_node, is_train=is_train)
+    elif model_type == 'mobilenetv2':
+        net = create_mobilenetv2(input_node, is_train=is_train)
     else:
         raise RuntimeError('type not exist')
 
