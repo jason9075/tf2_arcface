@@ -56,7 +56,7 @@ def main():
     train_main_ds = train_list_ds.map(process_path, num_parallel_calls=AUTOTUNE)
     train_main_ds = prepare_for_training(train_main_ds)
 
-    model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], 20000, mode='train')
+    model = create_training_model(IMAGE_SIZE, 20000, mode='train')
 
     # download pre trained weight
     import boto3

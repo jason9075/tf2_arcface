@@ -3,7 +3,6 @@ import os
 import pathlib
 from argparse import ArgumentParser
 
-import horovod.tensorflow.keras as hvd
 import numpy as np
 import tensorflow as tf
 # import tensorflow_addons as tfa
@@ -34,30 +33,26 @@ TRAIN_CLASS_NAMES = np.array([])
 # with open(param_path, 'r') as tc:
 #     trainingParams = json.load(tc)
 
+strategy = tf.distribute.MirroredStrategy()
+print("MirroredStrategy REPLICAS: ", strategy.num_replicas_in_sync)
+
 args = parser.parse_args()
 
 TRAIN_DATA_PATH = os.path.join(input_path, 'train')
 EPOCHS = int(args.epoch)
 IMAGE_SIZE = (int(args.image_size), int(args.image_size))
-BATCH_SIZE = int(args.batch_size)
+BATCH_SIZE = int(args.batch_size) * strategy.num_replicas_in_sync
 FREQ_FACTOR = int(args.freq_factor_by_number_of_epoch)
-
-hvd.init()
-hvd_size = hvd.size()
 
 
 gpus = tf.config.experimental.list_physical_devices('GPU')
 print(gpus)
 for gpu in gpus:
     tf.config.experimental.set_memory_growth(gpu, True)
-tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
 
 
 def main():
     global TRAIN_CLASS_NAMES
-
-    print(f'hvd_size: {hvd_size}.')
-    print(f'hvd rank: {hvd.rank()}.')
 
     train_data_dir = pathlib.Path(TRAIN_DATA_PATH)
     train_list_ds = tf.data.Dataset.list_files(str(train_data_dir / '*/*.jpg'))
@@ -65,49 +60,35 @@ def main():
         [item.name for item in train_data_dir.glob('*') if item.name not in [".keep", ".DS_Store"]])
     num_of_class = len(TRAIN_CLASS_NAMES)
     train_image_count = len(list(train_data_dir.glob('*/*.jpg')))
-    steps_per_epoch = np.ceil(train_image_count // BATCH_SIZE // hvd_size)
+    steps_per_epoch = np.ceil(train_image_count // BATCH_SIZE)
 
     train_main_ds = train_list_ds.map(process_path, num_parallel_calls=AUTOTUNE)
     train_main_ds = prepare_for_training(train_main_ds)
 
-    model = create_training_model(IMAGE_SIZE, num_of_class, mode='train')
+    with strategy.scope():
+        model = create_training_model(IMAGE_SIZE, num_of_class, mode='train', model_type='mobilenetv3')
 
-    # download pre trained weight
-    import boto3
-    s3 = boto3.client('s3')
-    s3.download_file('astra-face-recognition-dataset',
-                     f'pretrained/{args.pretrained}',
-                     os.path.join('saved_model', args.pretrained))
-
-    model.load_weights(os.path.join('saved_model', args.pretrained), by_name=True)
     # model.summary()
 
-    # radam = tfa.optimizers.RectifiedAdam(0.001 * hvd_size)
-    # ranger = tfa.optimizers.Lookahead(radam, sync_period=6, slow_step_size=0.5)
-    adam = Adam(0.001 * hvd_size)
-    adam = hvd.DistributedOptimizer(adam)
+    adam = Adam(0.01)
 
     model.compile(optimizer=adam, loss=softmax_loss)
     training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
     callbacks = []
 
-    callbacks.append(hvd.callbacks.BroadcastGlobalVariablesCallback(0))
-    callbacks.append(hvd.callbacks.MetricAverageCallback())
-    callbacks.append(hvd.callbacks.LearningRateWarmupCallback(warmup_epochs=5, verbose=1))
-    if hvd.rank() == 0:
-        callbacks.append(ModelCheckpoint(
-            os.path.join(ckpt_path, f"{training_date}_e_{{epoch}}"),
-            save_freq=int(steps_per_epoch * FREQ_FACTOR)))
-        callbacks.append(TensorBoard(log_dir=tb_path,
-                                     update_freq=int(steps_per_epoch * FREQ_FACTOR),
-                                     profile_batch=0))
+    callbacks.append(ModelCheckpoint(
+        os.path.join(ckpt_path, f"{training_date}_e_{{epoch}}"),
+        save_freq=int(steps_per_epoch * FREQ_FACTOR)))
+    callbacks.append(TensorBoard(log_dir=tb_path,
+                                 update_freq=int(steps_per_epoch * FREQ_FACTOR),
+                                 profile_batch=0))
 
     model.fit(train_main_ds,
               epochs=EPOCHS,
               steps_per_epoch=steps_per_epoch,
               callbacks=callbacks,
-              verbose=(1 if hvd.rank() == 0 else 0)
+              verbose=1
               # initial_epoch=epochs - 1)
               )
 

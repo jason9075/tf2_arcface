@@ -44,7 +44,7 @@ def main():
     # debug_data = eval_dataset.as_numpy_iterator()
     # print(next(debug_data))
 
-    model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], num_of_class, mode='train')
+    model = create_training_model(IMAGE_SIZE, num_of_class, mode='train')
 
     if RETRAIN:
         ckpt_path = tf.train.latest_checkpoint('saved_model/ckpt-20210104/')

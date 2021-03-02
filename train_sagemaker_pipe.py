@@ -121,7 +121,7 @@ def main():
     # exit(0)
     #
 
-    model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], NUM_CLASSES, mode='train')
+    model = create_training_model(IMAGE_SIZE, NUM_CLASSES, mode='train')
 
     # model.summary()
 

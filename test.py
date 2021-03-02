@@ -6,9 +6,9 @@ IMAGE_SIZE = (224, 224)
 
 
 def main():
-    model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], 1, mode='infer')
+    model = create_training_model(IMAGE_SIZE, 1, mode='infer')
 
-    model.load_weights('checkpoints/2020-11-18-08-51-21_e_400.ckpt')
+    model.load_weights('saved_model/2021-02-22-09-37-54_e_3.ckpt.h5', by_name=True, skip_mismatch=True)
 
     import cv2
     img1 = cv2.imread(
@@ -32,8 +32,17 @@ def main():
     vector2 = model.predict(np.expand_dims(img2, axis=0))[0]
     print(vector2)
 
-    dist = np.linalg.norm(vector1 - vector2)
-    print(dist)
+    sim = cosine_dist(vector1, vector2)
+    print(sim)
+
+
+def cosine_dist(v1, v2):
+    dot = np.dot(v1, v2)
+    norm = np.linalg.norm(v1) * np.linalg.norm(v2)
+    sim = dot / norm  # between [-1, +1]
+    sim = (sim + 1) / 2
+
+    return sim
 
 
 if __name__ == '__main__':
