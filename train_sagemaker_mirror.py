@@ -1,3 +1,4 @@
+import tensorflow_datasets as tfds
 import datetime
 import os
 import pathlib
@@ -10,6 +11,8 @@ from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
 from tensorflow.keras.optimizers import Adam
 
 from convert_tensorflow import create_training_model
+
+tfds.disable_progress_bar()
 
 parser = ArgumentParser()
 parser.add_argument('--batch_size', default=16, help='batch_size')
@@ -137,7 +140,7 @@ def main():
         verbose=1,
         save_best_only=True,
         save_weights_only=True,
-        ))
+    ))
     callbacks.append(TensorBoard(log_dir=tb_path,
                                  update_freq=int(steps_per_epoch * FREQ_FACTOR),
                                  profile_batch=0))
