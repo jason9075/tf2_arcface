@@ -20,9 +20,9 @@ def create_training_model(input_shape, num_of_class, embedding_size=128,
     elif model_type == 'resnet50':
         net = create_resnet50(input_node, layers=[3, 4, 14, 3], is_train=is_train)
     elif model_type == 'mobilenetv3':
-        net = create_mobilenetv3(input_node, is_train=is_train)
+        net = create_mobilenetv3(input_node)
     elif model_type == 'mobilenetv2':
-        net = create_mobilenetv2(input_node, is_train=is_train)
+        net = create_mobilenetv2(input_node)
     else:
         raise RuntimeError('type not exist')
 

@@ -133,7 +133,7 @@ def main():
 
     # model.summary()
 
-    adam = Adam(0.01)
+    adam = Adam(0.1)
 
     model.compile(optimizer=adam, loss=softmax_loss)
     training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
