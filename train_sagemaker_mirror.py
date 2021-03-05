@@ -1,6 +1,5 @@
 import datetime
 import os
-import pathlib
 from argparse import ArgumentParser
 
 import numpy as np
@@ -11,16 +10,6 @@ from tensorflow.keras.optimizers import Adam
 
 from convert_tensorflow import create_training_model
 
-#  https://github.com/tqdm/tqdm/issues/619  #
-import tqdm
-
-
-def nop(it, *a, **k):
-    return it
-
-
-tqdm.tqdm = nop
-###
 
 parser = ArgumentParser()
 parser.add_argument('--batch_size', default=16, help='batch_size')
@@ -159,8 +148,11 @@ def main():
               validation_data=valid_main_ds,
               validation_steps=valid_steps_per_epoch,
               callbacks=callbacks,
+              verbose=2
               # initial_epoch=epochs - 1)
               )
+
+    model.save_weights(os.path.join(ckpt_path, f"{training_date}_e_{EPOCHS}"))
 
 
 def decode_img(img):
