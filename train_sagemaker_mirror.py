@@ -122,14 +122,15 @@ def main():
     with strategy.scope():
         model = create_training_model(IMAGE_SIZE, NUM_CLASSES, mode='train', model_type='mobilenetv2')
 
-        import boto3
-        s3 = boto3.client('s3')
-        s3.download_file(PRETRAIN_BUCKET,
-                         f'pretrained/{args.pretrained}',
-                         os.path.join('saved_model', args.pretrained))
-        model.load_weights(os.path.join('saved_model', args.pretrained), by_name=True)
+        if args.pretrained != 'None':
+            import boto3
+            s3 = boto3.client('s3')
+            s3.download_file(PRETRAIN_BUCKET,
+                             f'pretrained/{args.pretrained}',
+                             os.path.join('saved_model', args.pretrained))
+            model.load_weights(os.path.join('saved_model', args.pretrained), by_name=True)
 
-    # model.summary()
+        model.summary()
 
     adam = Adam(0.1)
 
