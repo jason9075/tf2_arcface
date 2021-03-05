@@ -51,6 +51,8 @@ NUM_CLASSES = int(args.num_of_class)
 TRAIN_IMAGE_COUNT = int(args.train_image_count)
 VALID_IMAGE_COUNT = int(args.valid_image_count)
 
+PRETRAIN_BUCKET = 'sagemaker-us-east-1-astra-face-recognition'
+
 
 def _dataset_parser_train(value):
     featdef = {
@@ -119,6 +121,13 @@ def main():
 
     with strategy.scope():
         model = create_training_model(IMAGE_SIZE, NUM_CLASSES, mode='train', model_type='mobilenetv2')
+
+        import boto3
+        s3 = boto3.client('s3')
+        s3.download_file(PRETRAIN_BUCKET,
+                         f'pretrained/{args.pretrained}',
+                         os.path.join('saved_model', args.pretrained))
+        model.load_weights(os.path.join('saved_model', args.pretrained), by_name=True)
 
     # model.summary()
 
