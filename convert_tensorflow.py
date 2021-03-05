@@ -9,7 +9,7 @@ from model.se_resnet50 import create_se_resnet50
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 
-def create_training_model(input_shape, num_of_class, embedding_size=128,
+def create_training_model(input_shape, num_of_class, embedding_size=512,
                           mode='infer', margin=0.5, logit_scale=64, model_type='se_resnet50'):
     is_train = mode == 'train'
 
