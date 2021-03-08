@@ -134,9 +134,8 @@ def main():
 
         model.summary()
 
-    adam = Adam(0.1)
-
-    model.compile(optimizer=adam, loss=softmax_loss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
+        adam = Adam(0.1)
+        model.compile(optimizer=adam, loss=softmax_loss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
     training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
     callbacks = []
