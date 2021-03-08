@@ -23,6 +23,7 @@ parser.add_argument('--num_of_class', default=353, help='num_of_class')
 parser.add_argument('--train_image_count', default=6382, help='train_image_count')
 parser.add_argument('--valid_image_count', default=300, help='valid_image_count')
 parser.add_argument('--modeltype', default="mobilenet_v2", help='model type')
+parser.add_argument('--verbose', default=2, help='verbose')
 
 prefix = '/opt/ml/'
 
@@ -52,6 +53,7 @@ NUM_CLASSES = int(args.num_of_class)
 TRAIN_IMAGE_COUNT = int(args.train_image_count)
 VALID_IMAGE_COUNT = int(args.valid_image_count)
 MODEL_TYPE = args.modeltype
+VERBOSE = int(args.verbose)
 
 PRETRAIN_BUCKET = 'sagemaker-us-east-1-astra-face-recognition'
 
@@ -159,7 +161,7 @@ def main():
               validation_data=valid_main_ds,
               validation_steps=valid_steps_per_epoch,
               callbacks=callbacks,
-              verbose=2
+              verbose=VERBOSE
               # initial_epoch=epochs - 1)
               )
 
