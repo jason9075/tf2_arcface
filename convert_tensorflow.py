@@ -29,9 +29,12 @@ def create_training_model(input_shape, num_of_class, embedding_size=512,
     if mode == 'train':
         labels = tf.keras.layers.Input([], name='labels')
 
-        net = tf.keras.layers.Dropout(0.4)(net)
-        net = tf.keras.layers.Flatten()(net)
-        pre_logits = tf.keras.layers.Dense(embedding_size, use_bias=False)(net)
+        if model_type != 'resnet50':
+            net = tf.keras.layers.Dropout(0.4)(net)
+            net = tf.keras.layers.Flatten()(net)
+            pre_logits = tf.keras.layers.Dense(embedding_size, use_bias=False)(net)
+        else:
+            pre_logits = net
 
         logits = ArcMarginPenalty(num_classes=num_of_class, margin=margin,
                                   logit_scale=logit_scale, embedding_size=embedding_size)((pre_logits, labels))

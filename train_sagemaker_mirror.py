@@ -22,6 +22,7 @@ parser.add_argument('--task_name', default="fr-train", help='task_name')
 parser.add_argument('--num_of_class', default=353, help='num_of_class')
 parser.add_argument('--train_image_count', default=6382, help='train_image_count')
 parser.add_argument('--valid_image_count', default=300, help='valid_image_count')
+parser.add_argument('--modeltype', default="mobilenet_v2", help='model type')
 
 prefix = '/opt/ml/'
 
@@ -50,6 +51,7 @@ FREQ_FACTOR = int(args.freq_factor_by_number_of_epoch)
 NUM_CLASSES = int(args.num_of_class)
 TRAIN_IMAGE_COUNT = int(args.train_image_count)
 VALID_IMAGE_COUNT = int(args.valid_image_count)
+MODEL_TYPE = args.modeltype
 
 PRETRAIN_BUCKET = 'sagemaker-us-east-1-astra-face-recognition'
 
@@ -120,7 +122,7 @@ def main():
     valid_steps_per_epoch = np.ceil(VALID_IMAGE_COUNT / VALID_BATCH_SIZE)
 
     with strategy.scope():
-        model = create_training_model(IMAGE_SIZE, NUM_CLASSES, mode='train', model_type='mobilenetv2')
+        model = create_training_model(IMAGE_SIZE, NUM_CLASSES, mode='train', model_type=MODEL_TYPE)
 
         if args.pretrained != 'None':
             import boto3
@@ -134,7 +136,7 @@ def main():
 
     adam = Adam(0.1)
 
-    model.compile(optimizer=adam, loss=softmax_loss)
+    model.compile(optimizer=adam, loss=softmax_loss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
     training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
     callbacks = []
