@@ -25,6 +25,7 @@ parser.add_argument('--train_image_count', default=6382, help='train_image_count
 parser.add_argument('--valid_image_count', default=300, help='valid_image_count')
 parser.add_argument('--modeltype', default="mobilenet_v2", help='model type')
 parser.add_argument('--verbose', default=2, help='verbose')
+parser.add_argument('--max_ckpt', default=2, help='max save ckpt')
 
 prefix = '/opt/ml/'
 
@@ -55,6 +56,7 @@ TRAIN_IMAGE_COUNT = int(args.train_image_count)
 VALID_IMAGE_COUNT = int(args.valid_image_count)
 MODEL_TYPE = args.modeltype
 VERBOSE = int(args.verbose)
+MAX_CKPT = int(args.max_ckpt)
 
 PRETRAIN_BUCKET = 'sagemaker-us-east-1-astra-face-recognition'
 
@@ -156,7 +158,7 @@ def main():
                                  update_freq=int(steps_per_epoch * FREQ_FACTOR),
                                  profile_batch=0))
 
-    callbacks.append(MaxCkptSave(ckpt_path, 2))
+    callbacks.append(MaxCkptSave(ckpt_path, MAX_CKPT))
 
     model.fit(train_main_ds,
               epochs=EPOCHS,
