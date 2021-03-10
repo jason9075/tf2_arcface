@@ -41,8 +41,9 @@ def create_training_model(input_shape, num_of_class, embedding_size=512,
         model = tf.keras.Model(inputs=[input_node, labels], outputs=[logits])
 
     elif mode == 'infer':
-        net = tf.keras.layers.Flatten()(net)
-        net = tf.keras.layers.Dense(embedding_size, use_bias=False)(net)
+        if model_type != 'resnet50':
+            net = tf.keras.layers.Flatten()(net)
+            net = tf.keras.layers.Dense(embedding_size, use_bias=False)(net)
         net = tf.nn.l2_normalize(net, axis=1, name='normed_embd')
 
         model = tf.keras.Model(inputs=[input_node], outputs=[net])

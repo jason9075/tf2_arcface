@@ -8,6 +8,7 @@ import tensorflow as tf
 from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
 from tensorflow.keras.optimizers import Adam
 
+from backend.callbacks import MaxCkptSave
 from convert_tensorflow import create_training_model
 
 
@@ -154,6 +155,8 @@ def main():
     callbacks.append(TensorBoard(log_dir=tb_path,
                                  update_freq=int(steps_per_epoch * FREQ_FACTOR),
                                  profile_batch=0))
+
+    callbacks.append(MaxCkptSave(ckpt_path, 2))
 
     model.fit(train_main_ds,
               epochs=EPOCHS,
