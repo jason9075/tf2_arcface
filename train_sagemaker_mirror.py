@@ -208,6 +208,7 @@ def prepare_for_training(ds, cache=False, is_train=True, shuffle_buffer_size=200
         ds = ds.repeat()
         ds = ds.batch(BATCH_SIZE)
     else:
+        ds = ds.repeat()
         ds = ds.batch(VALID_BATCH_SIZE)
     ds = ds.prefetch(buffer_size=AUTOTUNE)
 
