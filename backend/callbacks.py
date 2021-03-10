@@ -14,6 +14,7 @@ class MaxCkptSave(tf.keras.callbacks.Callback):
         index_dict = {file: os.path.getctime(file) for file in index_list}
         index_dict = {k: v for k, v in sorted(index_dict.items(), key=lambda item: item[1])}
         num_of_delete = len(index_dict) - self.num_of_save
+        print(num_of_delete)
         if num_of_delete < 0:
             return
         for i, (k, _) in enumerate(index_dict.items()):
