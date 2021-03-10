@@ -165,6 +165,7 @@ def main():
               steps_per_epoch=steps_per_epoch,
               validation_data=valid_main_ds,
               validation_steps=valid_steps_per_epoch,
+              validation_freq=1,
               callbacks=callbacks,
               verbose=VERBOSE
               # initial_epoch=epochs - 1)
