@@ -17,8 +17,9 @@ def create_training_model(input_shape, num_of_class, embedding_size=512,
 
     if model_type == 'se_resnet50':
         net = create_se_resnet50(input_node, layers=[3, 4, 6, 3])
-    elif model_type == 'resnet50':
-        net = create_resnet50(input_node, layers=[3, 4, 14, 3], is_train=is_train)
+    # elif model_type == 'resnet50':
+    #     net = create_resnet50(input_node, layers=[3, 4, 14, 3], is_train=is_train)
+        net = create_resnet50(input_node, layers=[3, 4, 14, 3])
     elif model_type == 'mobilenetv3':
         net = create_mobilenetv3(input_node)
     elif model_type == 'mobilenetv2':
@@ -34,6 +35,7 @@ def create_training_model(input_shape, num_of_class, embedding_size=512,
             net = tf.keras.layers.Flatten()(net)
             pre_logits = tf.keras.layers.Dense(embedding_size, use_bias=False)(net)
         else:
+            net = tf.keras.layers.Dropout(0.4)(net)
             pre_logits = net
 
         logits = ArcMarginPenalty(num_classes=num_of_class, margin=margin,
