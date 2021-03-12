@@ -17,7 +17,7 @@ def create_training_model(input_shape, num_of_class, embedding_size=512,
 
     if model_type == 'se_resnet50':
         net = create_se_resnet50(input_node, layers=[3, 4, 6, 3])
-    # elif model_type == 'resnet50':
+    elif model_type == 'resnet50':
     #     net = create_resnet50(input_node, layers=[3, 4, 14, 3], is_train=is_train)
         net = create_resnet50(input_node, layers=[3, 4, 14, 3])
     elif model_type == 'mobilenetv3':
@@ -25,7 +25,7 @@ def create_training_model(input_shape, num_of_class, embedding_size=512,
     elif model_type == 'mobilenetv2':
         net = create_mobilenetv2(input_node)
     else:
-        raise RuntimeError('type not exist')
+        raise RuntimeError(f'type not exist: {model_type}')
 
     if mode == 'train':
         labels = tf.keras.layers.Input([], name='labels')
