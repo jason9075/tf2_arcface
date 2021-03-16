@@ -19,7 +19,5 @@ class MaxCkptSave(tf.keras.callbacks.Callback):
         for i, (k, _) in enumerate(index_dict.items()):
             if i == num_of_delete:
                 break
-            print(f'k: {k}')
             for f in glob.glob(os.path.join(f'{k[:-6]}*')):
-                print(f'remove {f}')
                 os.remove(f)

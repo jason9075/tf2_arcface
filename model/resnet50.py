@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-def create_resnet50(input_node, layers=None, embedding_size=512, is_train=False):
+def create_resnet50(input_node, embedding_size, layers=None, is_train=False):
     expansion = 1
 
     net = tf.keras.layers.ZeroPadding2D(padding=1, name='first_padding')(input_node)
