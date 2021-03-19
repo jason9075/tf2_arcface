@@ -1,13 +1,13 @@
 from convert_tensorflow import create_training_model
 
-IMAGE_SIZE = (224, 224)
-VERSION = 1
+IMAGE_SIZE = (112, 112)
+VERSION = 'aws'
 
 
 def main():
-    model = create_training_model(IMAGE_SIZE, 1, mode='infer')
+    model = create_training_model(IMAGE_SIZE, 1, mode='infer', model_type='mobilenetv2')
 
-    model.load_weights('checkpoints/2020-11-18-08-51-21_e_400.ckpt')
+    model.load_weights('checkpoints/2021-03-02-09-50-25_e_10')
 
     model.save(f'saved_model/recognition/{VERSION}/', include_optimizer=False)
 
