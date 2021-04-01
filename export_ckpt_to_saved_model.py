@@ -1,13 +1,13 @@
 from convert_tensorflow import create_training_model
 
 IMAGE_SIZE = (112, 112)
-VERSION = 'aws'
+VERSION = 'a79'
 
 
 def main():
-    model = create_training_model(IMAGE_SIZE, 1, mode='infer', model_type='mobilenetv2')
+    model = create_training_model(IMAGE_SIZE, 1, mode='infer', model_type='resnet50')
 
-    model.load_weights('checkpoints/2021-03-02-09-50-25_e_10')
+    model.load_weights('checkpoints/2021-03-05-08-30-00_e_374.ckpt')
 
     model.save(f'saved_model/recognition/{VERSION}/', include_optimizer=False)
 
