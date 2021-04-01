@@ -48,7 +48,7 @@ args = parser.parse_args()
 
 TRAIN_DATA_PATH = os.path.join(input_path, 'train')
 EPOCHS = int(args.epoch)
-LR = int(args.lr)
+LR = float(args.lr)
 IMAGE_SIZE = (int(args.image_size), int(args.image_size))
 BATCH_SIZE = int(args.batch_size) * strategy.num_replicas_in_sync
 VALID_BATCH_SIZE = 3 * strategy.num_replicas_in_sync
