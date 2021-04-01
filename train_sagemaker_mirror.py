@@ -26,6 +26,7 @@ parser.add_argument('--valid_image_count', default=300, help='valid_image_count'
 parser.add_argument('--modeltype', default="mobilenet_v2", help='model type')
 parser.add_argument('--verbose', default=2, help='verbose')
 parser.add_argument('--max_ckpt', default=2, help='max save ckpt')
+parser.add_argument('--lr', default=0.1, help='learning rate')
 
 prefix = '/opt/ml/'
 
@@ -47,6 +48,7 @@ args = parser.parse_args()
 
 TRAIN_DATA_PATH = os.path.join(input_path, 'train')
 EPOCHS = int(args.epoch)
+LR = int(args.lr)
 IMAGE_SIZE = (int(args.image_size), int(args.image_size))
 BATCH_SIZE = int(args.batch_size) * strategy.num_replicas_in_sync
 VALID_BATCH_SIZE = 3 * strategy.num_replicas_in_sync
@@ -139,7 +141,7 @@ def main():
 
         model.summary()
 
-        adam = Adam(0.1)
+        adam = Adam(LR)
         model.compile(optimizer=adam, loss=softmax_loss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
     training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
