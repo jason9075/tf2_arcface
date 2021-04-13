@@ -11,7 +11,6 @@ from tensorflow.keras.optimizers import Adam
 from backend.callbacks import MaxCkptSave
 from convert_tensorflow import create_training_model
 
-
 parser = ArgumentParser()
 parser.add_argument('--batch_size', default=16, help='batch_size')
 parser.add_argument('--epoch', default=3, help='epoch')
@@ -140,6 +139,13 @@ def main():
             model.load_weights(os.path.join('saved_model', args.pretrained), by_name=True)
 
         model.summary()
+
+        # exp start
+
+        for layer in model.layers[:-1]:
+            layer.trainable = False
+
+        # exp end
 
         adam = Adam(LR)
         model.compile(optimizer=adam, loss=softmax_loss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])

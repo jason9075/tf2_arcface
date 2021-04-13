@@ -31,7 +31,7 @@ def create_training_model(input_shape, num_of_class, embedding_size=512,
         labels = tf.keras.layers.Input([], name='labels')
 
         if model_type == 'resnet50':
-            net = tf.keras.layers.Dropout(0.4)(net)
+            # net = tf.keras.layers.Dropout(0.4)(net)
             pre_logits = net
         else:
             net = tf.keras.layers.Flatten()(net)
