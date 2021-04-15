@@ -40,7 +40,6 @@ def create_training_model(input_shape, num_of_class, embedding_size=512,
 
         logits = ArcMarginPenalty(num_classes=num_of_class, margin=margin,
                                   logit_scale=logit_scale, embedding_size=embedding_size)((pre_logits, labels))
-        logits = tf.keras.layers.Softmax()(logits)
         model = tf.keras.Model(inputs=[input_node, labels], outputs=[logits])
 
     elif mode == 'infer':
