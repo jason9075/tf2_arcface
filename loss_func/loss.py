@@ -30,19 +30,35 @@ class ArcMarginPenalty(tf.keras.layers.Layer):
         normed_embds = tf.nn.l2_normalize(embds, axis=1, name='normed_embd')
         normed_w = tf.nn.l2_normalize(self.w, axis=0, name='normed_weights')
 
-        cos_t = tf.matmul(normed_embds, normed_w, name='cos_t')
-        sin_t = tf.sqrt(1. - cos_t ** 2, name='sin_t')
+        # method origin #
+        # cos_t = tf.matmul(normed_embds, normed_w, name='cos_t')
+        # sin_t = tf.sqrt(1. - cos_t ** 2, name='sin_t')
+        #
+        # cos_mt = tf.subtract(
+        #     cos_t * self.cos_m, sin_t * self.sin_m, name='cos_mt')
+        #
+        # cos_mt = tf.where(cos_t > self.th, cos_mt, cos_t - self.mm)
+        #
+        # mask = tf.one_hot(tf.cast(labels, tf.int32), depth=self.num_classes,
+        #                   name='one_hot_mask')
+        #
+        # logist = tf.where(mask == 1., cos_mt, cos_t)
+        # logist = tf.multiply(logist, self.logit_scale, 'arcface_logist')
 
-        cos_mt = tf.subtract(
-            cos_t * self.cos_m, sin_t * self.sin_m, name='cos_mt')
-
-        cos_mt = tf.where(cos_t > self.th, cos_mt, cos_t - self.mm)
-
-        mask = tf.one_hot(tf.cast(labels, tf.int32), depth=self.num_classes,
-                          name='one_hot_mask')
-
-        logist = tf.where(mask == 1., cos_mt, cos_t)
-        logist = tf.multiply(logist, self.logit_scale, 'arcface_logist')
+        # method update #
+        fc7 = tf.matmul(normed_embds, normed_w, name='fc7')
+        mapping_label_onehot = tf.one_hot(tf.cast(labels, tf.int32), depth=self.num_classes,
+                                          name='one_hot_mask')
+        fc7_onehot = fc7 * mapping_label_onehot
+        cos_t = fc7_onehot
+        t = tf.math.acos(cos_t)
+        t = t + self.margin
+        margin_cos = tf.math.cos(t)
+        margin_fc7 = margin_cos
+        margin_fc7_onehot = margin_fc7 * mapping_label_onehot
+        diff = margin_fc7_onehot - fc7_onehot
+        fc7 = fc7 + diff
+        logist = tf.multiply(fc7, self.logit_scale, 'arcface_logist')
 
         return logist
 
