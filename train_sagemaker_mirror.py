@@ -140,8 +140,8 @@ def main():
 
         # exp start
 
-        # for layer in model.layers[:-2]:
-        #     layer.trainable = False
+        for layer in model.layers[:-10]:
+            layer.trainable = False
 
         # exp end
         model.summary()
