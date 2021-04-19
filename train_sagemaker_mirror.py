@@ -140,12 +140,11 @@ def main():
 
         # exp start
 
-        for layer in model.layers[:-2]:
-            layer.trainable = False
+        # for layer in model.layers[:-2]:
+        #     layer.trainable = False
 
         # exp end
         model.summary()
-
 
         adam = Adam(LR)
         model.compile(optimizer=adam, loss=softmax_loss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
