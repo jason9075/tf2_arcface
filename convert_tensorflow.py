@@ -35,8 +35,9 @@ def create_training_model(input_shape, num_of_class, embedding_size=512,
             pre_logits = net
         else:
             net = tf.keras.layers.Flatten()(net)
+            net = tf.keras.layers.Dropout(0.4)(net)
             net = tf.keras.layers.Dense(embedding_size, use_bias=False)(net)
-            pre_logits = tf.keras.layers.Dropout(0.4)(net)
+            pre_logits = tf.keras.layers.BatchNormalization(epsilon=1e-5, name='features__bn')(net)
 
         logits = ArcMarginPenalty(num_classes=num_of_class, margin=margin,
                                   logit_scale=logit_scale, embedding_size=embedding_size)((pre_logits, labels))
