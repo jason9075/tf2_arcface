@@ -26,6 +26,7 @@ parser.add_argument('--modeltype', default="mobilenet_v2", help='model type')
 parser.add_argument('--verbose', default=2, help='verbose')
 parser.add_argument('--max_ckpt', default=2, help='max save ckpt')
 parser.add_argument('--lr', default=0.1, help='learning rate')
+parser.add_argument('--freeze_layers', default=0, help='freeze num of last layers')
 
 prefix = '/opt/ml/'
 
@@ -58,6 +59,7 @@ VALID_IMAGE_COUNT = int(args.valid_image_count)
 MODEL_TYPE = args.modeltype
 VERBOSE = int(args.verbose)
 MAX_CKPT = int(args.max_ckpt)
+FREEZE_LAYERS = int(args.freeze_layers)
 
 PRETRAIN_BUCKET = 'sagemaker-us-east-1-astra-face-recognition'
 
@@ -138,12 +140,10 @@ def main():
                              os.path.join('saved_model', args.pretrained))
             model.load_weights(os.path.join('saved_model', args.pretrained), by_name=True)
 
-        # exp start
+        if 0 < FREEZE_LAYERS:
+            for layer in model.layers[:-FREEZE_LAYERS]:
+                layer.trainable = False
 
-        for layer in model.layers[:-10]:
-            layer.trainable = False
-
-        # exp end
         model.summary()
 
         adam = Adam(LR)
