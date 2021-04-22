@@ -36,7 +36,7 @@ def create_training_model(input_shape, num_of_class, embedding_size=512,
             # net = tf.keras.layers.Dropout(0.4)(net)
             pre_logits = net
         else:
-            debug = net
+            # debug = net
             net = tf.keras.layers.Flatten()(net)
             net = tf.keras.layers.Dropout(0.4)(net)
             net = tf.keras.layers.Dense(embedding_size, use_bias=False)(net)
@@ -44,7 +44,7 @@ def create_training_model(input_shape, num_of_class, embedding_size=512,
 
         logits = ArcMarginPenalty(num_classes=num_of_class, margin=margin,
                                   logit_scale=logit_scale, embedding_size=embedding_size)((pre_logits, labels))
-        model = tf.keras.Model(inputs=[input_node, labels], outputs=[debug])
+        model = tf.keras.Model(inputs=[input_node, labels], outputs=[logits])
 
     elif mode == 'infer':
         if model_type != 'resnet50':
