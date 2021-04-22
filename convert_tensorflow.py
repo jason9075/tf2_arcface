@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from loss_func.loss import ArcMarginPenalty
 from model.mobilenetv2 import create_mobilenetv2
-from model.mobilenetv3 import create_mobilenetv3
+from model.mobilenetv3 import create_mobilenetv3l, create_mobilenetv3s
 from model.resnet50 import create_resnet50
 from model.se_resnet50 import create_se_resnet50
 
@@ -20,8 +20,10 @@ def create_training_model(input_shape, num_of_class, embedding_size=512,
     elif model_type == 'resnet50':
     #     net = create_resnet50(input_node, layers=[3, 4, 14, 3], is_train=is_train)
         net = create_resnet50(input_node, layers=[3, 4, 14, 3], embedding_size=512)
-    elif model_type == 'mobilenetv3':
-        net = create_mobilenetv3(input_node)
+    elif model_type == 'mobilenetv3l':
+        net = create_mobilenetv3l(input_node)
+    elif model_type == 'mobilenetv3s':
+        net = create_mobilenetv3s(input_node)
     elif model_type == 'mobilenetv2':
         net = create_mobilenetv2(input_node)
     else:
@@ -34,6 +36,7 @@ def create_training_model(input_shape, num_of_class, embedding_size=512,
             # net = tf.keras.layers.Dropout(0.4)(net)
             pre_logits = net
         else:
+            debug = net
             net = tf.keras.layers.Flatten()(net)
             net = tf.keras.layers.Dropout(0.4)(net)
             net = tf.keras.layers.Dense(embedding_size, use_bias=False)(net)
@@ -41,7 +44,7 @@ def create_training_model(input_shape, num_of_class, embedding_size=512,
 
         logits = ArcMarginPenalty(num_classes=num_of_class, margin=margin,
                                   logit_scale=logit_scale, embedding_size=embedding_size)((pre_logits, labels))
-        model = tf.keras.Model(inputs=[input_node, labels], outputs=[logits])
+        model = tf.keras.Model(inputs=[input_node, labels], outputs=[debug])
 
     elif mode == 'infer':
         if model_type != 'resnet50':

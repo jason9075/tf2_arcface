@@ -142,6 +142,7 @@ def main():
 
         if 0 < FREEZE_LAYERS:
             for layer in model.layers[:-FREEZE_LAYERS]:
+                print(f'freeze layer: {layer.name}')
                 layer.trainable = False
 
         model.summary()
