@@ -10,7 +10,6 @@ from tensorflow.keras.optimizers import Adam
 
 from backend.callbacks import MaxCkptSave
 from convert_tensorflow import create_training_model
-from train import validate_layer_name
 
 parser = ArgumentParser()
 parser.add_argument('--batch_size', default=16, help='batch_size')
@@ -225,6 +224,16 @@ def prepare_for_training(ds, cache=False, is_train=True, shuffle_buffer_size=200
 
     return ds
 
+def validate_layer_name(name):
+    layer_type = name.split('/')[-1]
+    if layer_type.startswith('Conv'):
+        return True
+    elif layer_type.startswith('BatchNorm'):
+        return True
+    elif layer_type.startswith('depthwise'):
+        return True
+
+    return False
 
 if __name__ == '__main__':
     main()
