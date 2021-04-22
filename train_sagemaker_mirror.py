@@ -10,6 +10,7 @@ from tensorflow.keras.optimizers import Adam
 
 from backend.callbacks import MaxCkptSave
 from convert_tensorflow import create_training_model
+from train import validate_layer_name
 
 parser = ArgumentParser()
 parser.add_argument('--batch_size', default=16, help='batch_size')
@@ -142,6 +143,8 @@ def main():
 
         if 0 < FREEZE_LAYERS:
             for layer in model.layers[:-FREEZE_LAYERS]:
+                if not validate_layer_name(layer.name):
+                    continue
                 print(f'freeze layer: {layer.name}')
                 layer.trainable = False
 

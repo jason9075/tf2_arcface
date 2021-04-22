@@ -24,8 +24,8 @@ BATCH_SIZE = int(os.getenv("BATCH_SIZE"))
 LEARNING_RATE = float(os.getenv("LEARNING_RATE"))
 TRAIN_RECORD_PATH = os.getenv("TRAIN_RECORD_PATH")
 VALID_RECORD_PATH = os.getenv("VALID_RECORD_PATH")
-MODEL_TYPE = 'resnet50'  # (resnet50|se_resnet50)
-RESTORE_FILE_PATH = 'saved_model/insightface.h5'
+MODEL_TYPE = 'mobilenetv3l'
+RESTORE_FILE_PATH = 'saved_model/origin_insightface.h5'
 
 image_feature_description = {
     'image/source_id': tf.io.FixedLenFeature([], tf.int64),
@@ -47,14 +47,21 @@ def main():
     valid_main_ds = valid_main_ds.repeat()
     valid_main_ds = valid_main_ds.batch(BATCH_SIZE)
 
-    num_of_class = 20000
-    num_of_train_images = 663118
-    num_of_valid_images = 60000
+    num_of_class = 10
+    num_of_train_images = 22
+    num_of_valid_images = 30
     steps_per_epoch = num_of_train_images // BATCH_SIZE + 1
     valid_steps_per_epoch = num_of_valid_images // BATCH_SIZE + 1
-    model = create_training_model(IMAGE_SIZE, [3, 4, 6, 3], num_of_class, mode='train', model_type=MODEL_TYPE)
+    model = create_training_model(IMAGE_SIZE, num_of_class, mode='train', model_type=MODEL_TYPE)
 
-    model = restore_weight(model, restore_latest_ckpt=False, h5_filepath=RESTORE_FILE_PATH)
+    # model = restore_weight(model, restore_latest_ckpt=False, h5_filepath=RESTORE_FILE_PATH)
+
+    for layer in model.layers[:-41]:
+        if not validate_layer_name(layer.name):
+            continue
+        layer.trainable = False
+        print(layer)
+
     model.summary()
 
     radam = tfa.optimizers.RectifiedAdam(LEARNING_RATE)
@@ -132,12 +139,22 @@ def _parse_image_aug_function(example_proto):
 
 def softmax_loss(y_true, y_pred):
     # y_true: sparse target
-    # y_pred: logist
+    # y_pred: logit
     y_true = tf.cast(tf.reshape(y_true, [-1]), tf.int32)
     ce = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y_true,
                                                         logits=y_pred)
     return tf.reduce_mean(ce)
 
+def validate_layer_name(name):
+    layer_type = name.split('/')[-1]
+    if layer_type.startswith('Conv'):
+        return True
+    elif layer_type.startswith('BatchNorm'):
+        return True
+    elif layer_type.startswith('depthwise'):
+        return True
+
+    return False
 
 if __name__ == '__main__':
     main()
