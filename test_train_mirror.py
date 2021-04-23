@@ -180,11 +180,11 @@ def main():
 
         model.summary(line_length=80)
 
-    optimizer = tf.keras.optimizers.SGD(
-        learning_rate=LR, momentum=0.9, nesterov=True)
-    loss_fn = SoftmaxLoss()
+        optimizer = tf.keras.optimizers.SGD(
+            learning_rate=LR, momentum=0.9, nesterov=True)
+        loss_fn = SoftmaxLoss()
 
-    model.compile(optimizer=optimizer, loss=loss_fn, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
+        model.compile(optimizer=optimizer, loss=loss_fn, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
 
     training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
