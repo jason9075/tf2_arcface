@@ -1,9 +1,13 @@
 import os
 import math
+import datetime
 
 import tensorflow as tf
 from argparse import ArgumentParser
 import numpy as np
+from tensorflow.python.keras.callbacks import ModelCheckpoint, TensorBoard
+
+from backend.callbacks import MaxCkptSave
 
 parser = ArgumentParser()
 parser.add_argument('--batch_size', default=16, help='batch_size')
@@ -83,8 +87,8 @@ def prepare_for_training(ds, cache=False, is_train=True, shuffle_buffer_size=200
             ds = ds.cache()
 
     if is_train:
-        ds = ds.shuffle(buffer_size=shuffle_buffer_size)
         ds = ds.repeat()
+        ds = ds.shuffle(buffer_size=shuffle_buffer_size)
         ds = ds.batch(BATCH_SIZE)
     else:
         ds = ds.repeat()
@@ -148,15 +152,15 @@ def main():
     from sagemaker_tensorflow import PipeModeDataset
     train_main_ds = PipeModeDataset(channel='train', record_format='TFRecord')
 
+    train_main_ds = prepare_for_training(train_main_ds)
     train_main_ds = train_main_ds.map(_dataset_parser_train,
                                       num_parallel_calls=AUTOTUNE)
-    train_main_ds = prepare_for_training(train_main_ds)
     steps_per_epoch = np.ceil(TRAIN_IMAGE_COUNT / BATCH_SIZE)
 
     valid_main_ds = PipeModeDataset(channel='valid', record_format='TFRecord')
+    valid_main_ds = prepare_for_training(valid_main_ds, is_train=False)
     valid_main_ds = valid_main_ds.map(_dataset_parser_valid,
                                       num_parallel_calls=AUTOTUNE)
-    valid_main_ds = prepare_for_training(valid_main_ds, is_train=False)
     valid_steps_per_epoch = np.ceil(VALID_IMAGE_COUNT / VALID_BATCH_SIZE)
 
     with strategy.scope():
@@ -172,11 +176,33 @@ def main():
 
     model.compile(optimizer=optimizer, loss=loss_fn)
 
+    training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+
+    callbacks = []
+
+    callbacks.append(ModelCheckpoint(
+        os.path.join(ckpt_path, f"{training_date}_e_{{epoch}}"),
+        save_freq='epoch',
+        mode='min',
+        monitor='val_loss',
+        verbose=1,
+        save_best_only=True,
+        save_weights_only=True,
+    ))
+    callbacks.append(TensorBoard(log_dir=tb_path,
+                                 update_freq=int(steps_per_epoch * FREQ_FACTOR),
+                                 profile_batch=0))
+
+    callbacks.append(MaxCkptSave(ckpt_path, MAX_CKPT))
+
     model.fit(train_main_ds,
               epochs=EPOCHS,
               steps_per_epoch=steps_per_epoch,
               validation_data=valid_main_ds,
               validation_steps=valid_steps_per_epoch,
+              verbose=VERBOSE,
+              validation_freq=1,
+              callbacks=callbacks,
               )
 
 
@@ -285,7 +311,8 @@ class ArcMarginPenaltyLogists(tf.keras.layers.Layer):
         self.th = tf.identity(math.cos(math.pi - self.margin), name='th')
         self.mm = tf.multiply(self.sin_m, self.margin, name='mm')
 
-    def call(self, embds, labels):
+    def call(self, inputs, **kwargs):
+        embds, labels = inputs
         normed_embds = tf.nn.l2_normalize(embds, axis=1, name='normed_embd')
         normed_w = tf.nn.l2_normalize(self.w, axis=0, name='normed_weights')
 
