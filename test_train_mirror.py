@@ -311,8 +311,7 @@ class ArcMarginPenaltyLogists(tf.keras.layers.Layer):
         self.th = tf.identity(math.cos(math.pi - self.margin), name='th')
         self.mm = tf.multiply(self.sin_m, self.margin, name='mm')
 
-    def call(self, inputs, **kwargs):
-        embds, labels = inputs
+    def call(self, embds, labels):
         normed_embds = tf.nn.l2_normalize(embds, axis=1, name='normed_embd')
         normed_w = tf.nn.l2_normalize(self.w, axis=0, name='normed_weights')
 
