@@ -89,9 +89,13 @@ def prepare_for_training(ds, cache=False, is_train=True, shuffle_buffer_size=200
     if is_train:
         ds = ds.repeat()
         ds = ds.shuffle(buffer_size=shuffle_buffer_size)
+        ds = ds.map(_dataset_parser_train,
+                                          num_parallel_calls=AUTOTUNE)
         ds = ds.batch(BATCH_SIZE)
     else:
         ds = ds.repeat()
+        ds = ds.map(_dataset_parser_valid,
+                    num_parallel_calls=AUTOTUNE)
         ds = ds.batch(VALID_BATCH_SIZE)
     ds = ds.prefetch(buffer_size=AUTOTUNE)
 
@@ -153,14 +157,10 @@ def main():
     train_main_ds = PipeModeDataset(channel='train', record_format='TFRecord')
 
     train_main_ds = prepare_for_training(train_main_ds)
-    train_main_ds = train_main_ds.map(_dataset_parser_train,
-                                      num_parallel_calls=AUTOTUNE)
     steps_per_epoch = np.ceil(TRAIN_IMAGE_COUNT / BATCH_SIZE)
 
     valid_main_ds = PipeModeDataset(channel='valid', record_format='TFRecord')
     valid_main_ds = prepare_for_training(valid_main_ds, is_train=False)
-    valid_main_ds = valid_main_ds.map(_dataset_parser_valid,
-                                      num_parallel_calls=AUTOTUNE)
     valid_steps_per_epoch = np.ceil(VALID_IMAGE_COUNT / VALID_BATCH_SIZE)
 
     with strategy.scope():
