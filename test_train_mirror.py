@@ -65,6 +65,8 @@ image_feature_description = {
     'image/encoded': tf.io.FixedLenFeature([], tf.string),
 }
 
+PRETRAIN_BUCKET = 'sagemaker-us-east-1-astra-face-recognition'
+
 
 def _regularizer(weights_decay=5e-4):
     return tf.keras.regularizers.l2(weights_decay)
@@ -89,8 +91,7 @@ def prepare_for_training(ds, cache=False, is_train=True, shuffle_buffer_size=200
     if is_train:
         ds = ds.repeat()
         ds = ds.shuffle(buffer_size=shuffle_buffer_size)
-        ds = ds.map(_dataset_parser_train,
-                                          num_parallel_calls=AUTOTUNE)
+        ds = ds.map(_dataset_parser_train, num_parallel_calls=AUTOTUNE)
         ds = ds.batch(BATCH_SIZE)
     else:
         ds = ds.repeat()
@@ -168,13 +169,22 @@ def main():
                              num_classes=NUM_CLASSES,
                              embd_shape=512,
                              training=True)
+
+        if args.pretrained != 'None':
+            import boto3
+            s3 = boto3.client('s3')
+            s3.download_file(PRETRAIN_BUCKET,
+                             f'pretrained/{args.pretrained}',
+                             os.path.join('saved_model', args.pretrained))
+            model.load_weights(os.path.join('saved_model', args.pretrained), by_name=True)
+
         model.summary(line_length=80)
 
     optimizer = tf.keras.optimizers.SGD(
         learning_rate=LR, momentum=0.9, nesterov=True)
     loss_fn = SoftmaxLoss()
 
-    model.compile(optimizer=optimizer, loss=loss_fn)
+    model.compile(optimizer=optimizer, loss=loss_fn, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
 
     training_date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
@@ -226,7 +236,7 @@ def ArcFaceModel(size=None, channels=3, num_classes=None, name='arcface_model',
     """Arc Face Model"""
     x = inputs = tf.keras.layers.Input([size, size, channels], name='input_image')
 
-    x = Backbone(use_pretrain=use_pretrain)(x)
+    x = Backbone(use_pretrain=use_pretrain, model_type=MODEL_TYPE)(x)
 
     embds = OutputLayer(embd_shape, w_decay=w_decay)(x)
 
@@ -254,15 +264,13 @@ def ArcHead(num_classes, margin=0.5, logist_scale=64, name='ArcHead'):
     return arc_head
 
 
-def Backbone(use_pretrain=True):
+def Backbone(use_pretrain=True, model_type='default'):
     """Backbone Model"""
-    weights = None
-    if use_pretrain:
-        weights = 'imagenet'
-
     def backbone(x_in):
-        return tf.keras.applications.MobileNetV2(input_shape=x_in.shape[1:], include_top=False,
-                                                 weights=weights)(x_in)
+        if model_type == 'default':
+            return tf.keras.applications.MobileNetV2(input_shape=x_in.shape[1:], include_top=False)(x_in)
+        elif model_type == 'mobilenetv3l':
+            return tf.keras.applications.MobileNetV3Large(input_shape=x_in.shape[1:], include_top=False)(x_in)
 
     return backbone
 
