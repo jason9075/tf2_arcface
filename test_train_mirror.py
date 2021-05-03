@@ -177,6 +177,7 @@ def main():
                              f'pretrained/{args.pretrained}',
                              os.path.join('saved_model', args.pretrained))
             model.load_weights(os.path.join('saved_model', args.pretrained), by_name=True)
+            print('load weight complete.')
 
         model.summary(line_length=80)
 
@@ -271,6 +272,8 @@ def Backbone(use_pretrain=True, model_type='default'):
             return tf.keras.applications.MobileNetV2(input_shape=x_in.shape[1:], include_top=False)(x_in)
         elif model_type == 'mobilenetv3l':
             return tf.keras.applications.MobileNetV3Large(input_shape=x_in.shape[1:], include_top=False)(x_in)
+        elif model_type == 'res50v2':
+            return tf.keras.applications.ResNet50V2(input_shape=x_in.shape[1:], include_top=False)(x_in)
 
     return backbone
 
