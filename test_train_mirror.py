@@ -274,6 +274,10 @@ def Backbone(use_pretrain=True, model_type='default'):
             return tf.keras.applications.MobileNetV3Large(input_shape=x_in.shape[1:], include_top=False)(x_in)
         elif model_type == 'res50v2':
             return tf.keras.applications.ResNet50V2(input_shape=x_in.shape[1:], include_top=False)(x_in)
+        elif model_type == 'efficientnet_b4':
+            return tf.keras.applications.EfficientNetB4(input_shape=x_in.shape[1:], include_top=False)(x_in)
+        else:
+            raise RuntimeError(f'model type \'{model_type}\' not exist.')
 
     return backbone
 
