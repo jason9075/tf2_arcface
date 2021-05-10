@@ -204,6 +204,8 @@ def main():
                                  update_freq=int(steps_per_epoch * FREQ_FACTOR),
                                  profile_batch=0))
 
+    callbacks.append(tf.keras.callbacks.TerminateOnNaN())
+
     callbacks.append(MaxCkptSave(ckpt_path, MAX_CKPT))
 
     model.fit(train_main_ds,
