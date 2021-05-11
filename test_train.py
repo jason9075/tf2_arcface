@@ -173,11 +173,11 @@ def SoftmaxLoss():
 
 def ArcFaceModel(size=None, channels=3, num_classes=None, name='arcface_model',
                  margin=0.5, logist_scale=64, embd_shape=512,
-                 w_decay=5e-4, use_pretrain=True, training=False):
+                 w_decay=5e-4, use_pretrain=True, training=False, model_type='default'):
     """Arc Face Model"""
     x = inputs = tf.keras.layers.Input([size, size, channels], name='input_image')
 
-    x = Backbone(use_pretrain=use_pretrain, model_type=MODEL_TYPE)(x)
+    x = Backbone(use_pretrain=use_pretrain, model_type=model_type)(x)
 
     embds = OutputLayer(embd_shape, w_decay=w_decay)(x)
 
