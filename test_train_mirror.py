@@ -204,8 +204,6 @@ def main():
                                  update_freq=int(steps_per_epoch * FREQ_FACTOR),
                                  profile_batch=0))
 
-    callbacks.append(tf.keras.callbacks.TerminateOnNaN())
-
     callbacks.append(MaxCkptSave(ckpt_path, MAX_CKPT))
 
     model.fit(train_main_ds,
@@ -217,6 +215,8 @@ def main():
               validation_freq=1,
               callbacks=callbacks,
               )
+    
+    model.save_weights(os.path.join(ckpt_path, f"{training_date}_e_{EPOCHS}"))
 
 
 def SoftmaxLoss():
@@ -280,6 +280,8 @@ def Backbone(use_pretrain=True, model_type='default'):
             return tf.keras.applications.EfficientNetB4(input_shape=x_in.shape[1:], include_top=False)(x_in)
         elif model_type == 'efficientnet_b3':
             return tf.keras.applications.EfficientNetB3(input_shape=x_in.shape[1:], include_top=False)(x_in)
+        elif model_type == 'efficientnet_b2':
+            return tf.keras.applications.EfficientNetB2(input_shape=x_in.shape[1:], include_top=False)(x_in)
         else:
             raise RuntimeError(f'model type \'{model_type}\' not exist.')
 
