@@ -1,13 +1,7 @@
-import os
-import pathlib
-
 import numpy as np
 import tensorflow as tf
-import tensorflow_addons as tfa
 
-from convert_tensorflow import create_training_model
 from test_train import ArcFaceModel, SoftmaxLoss
-from train import softmax_loss
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 TRAIN_CLASS_NAMES = np.array([])
@@ -18,7 +12,7 @@ IMAGE_SIZE = (112, 112)
 MODEL_TYPE = 'res50v2'
 h5_filepath = 'saved_model/20210516_res50v2_peter_epoch_80.h5'
 CKPT = 'checkpoints/2021-04-22-03-04-21_e_2'
-TFRECORD = 'dataset/10_divide_112.tfrecord'
+TFRECORD = '93979_train.tfrecord'
 
 
 def main():
