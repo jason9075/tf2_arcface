@@ -6,7 +6,7 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 
 from convert_tensorflow import create_training_model
-from test_train import ArcFaceModel
+from test_train import ArcFaceModel, SoftmaxLoss
 from train import softmax_loss
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
@@ -56,10 +56,11 @@ def main():
     model.load_weights(h5_filepath, by_name=True)
     model.summary(line_length=80)
 
-    radam = tfa.optimizers.RectifiedAdam()
-    ranger = tfa.optimizers.Lookahead(radam, sync_period=6, slow_step_size=0.5)
+    optimizer = tf.keras.optimizers.SGD(
+        learning_rate=0.1, momentum=0.9, nesterov=True)
+    loss_fn = SoftmaxLoss()
 
-    model.compile(optimizer=ranger, loss=softmax_loss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
+    model.compile(optimizer=optimizer, loss=loss_fn, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
 
     model.evaluate(eval_dataset)
 
