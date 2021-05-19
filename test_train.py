@@ -172,7 +172,7 @@ def SoftmaxLoss():
 
 
 def ArcFaceModel(size=None, channels=3, num_classes=None, name='arcface_model',
-                 margin=0.5, logist_scale=64, embd_shape=512,
+                 margin=0.5, logist_scale=64, embd_shape=512, head_type='arc',
                  w_decay=5e-4, use_pretrain=True, training=False, model_type='default'):
     """Arc Face Model"""
     x = inputs = tf.keras.layers.Input([size, size, channels], name='input_image')
@@ -184,8 +184,12 @@ def ArcFaceModel(size=None, channels=3, num_classes=None, name='arcface_model',
     if training:
         assert num_classes is not None
         labels = tf.keras.layers.Input([], name='label')
-        logist = ArcHead(num_classes=num_classes, margin=margin,
-                         logist_scale=logist_scale)(embds, labels)
+        if head_type == 'arc':
+            logist = ArcHead(num_classes=num_classes, margin=margin,
+                             logist_scale=logist_scale)(embds, labels)
+        else:
+            logist = NormHead(num_classes=num_classes,
+                              logist_scale=logist_scale)(embds, labels)
         return tf.keras.Model((inputs, labels), logist, name=name)
     else:
         return tf.keras.Model(inputs, embds, name=name)
@@ -205,6 +209,20 @@ def ArcHead(num_classes, margin=0.5, logist_scale=64, name='ArcHead'):
     return arc_head
 
 
+def NormHead(num_classes, logist_scale=64, name='NormHead'):
+    """Norm Head"""
+
+    def norm_head(x_in, y_in):
+        x = inputs1 = tf.keras.layers.Input(x_in.shape[1:])
+        y = tf.keras.layers.Input(y_in.shape[1:])
+        x = ArcMarginPenaltyLogists(num_classes=num_classes,
+                                    margin=0,
+                                    logist_scale=logist_scale)(x, y)
+        return tf.keras.Model((inputs1, y), x, name=name)((x_in, y_in))
+
+    return norm_head
+
+
 def Backbone(use_pretrain=True, model_type='default'):
     """Backbone Model"""
 
@@ -217,6 +235,10 @@ def Backbone(use_pretrain=True, model_type='default'):
             return tf.keras.applications.ResNet50V2(input_shape=x_in.shape[1:], include_top=False)(x_in)
         elif model_type == 'efficientnet_b4':
             return tf.keras.applications.EfficientNetB4(input_shape=x_in.shape[1:], include_top=False)(x_in)
+        elif model_type == 'efficientnet_b3':
+            return tf.keras.applications.EfficientNetB3(input_shape=x_in.shape[1:], include_top=False)(x_in)
+        elif model_type == 'efficientnet_b2':
+            return tf.keras.applications.EfficientNetB2(input_shape=x_in.shape[1:], include_top=False)(x_in)
         else:
             raise RuntimeError(f'model type \'{model_type}\' not exist.')
 
