@@ -25,6 +25,7 @@ parser.add_argument('--verbose', default=2, help='verbose')
 parser.add_argument('--max_ckpt', default=2, help='max save ckpt')
 parser.add_argument('--lr', default=0.1, help='learning rate')
 parser.add_argument('--freeze_layers', default=0, help='freeze num of last layers')
+parser.add_argument('--buffer_size', default=2000, help='shuffle buffer size')
 
 prefix = '/opt/ml/'
 
@@ -58,6 +59,7 @@ MODEL_TYPE = args.modeltype
 VERBOSE = int(args.verbose)
 MAX_CKPT = int(args.max_ckpt)
 FREEZE_LAYERS = int(args.freeze_layers)
+BUFFER_SIZE = int(args.buffer_size)
 
 image_feature_description = {
     'image/source_id': tf.io.FixedLenFeature([], tf.int64),
@@ -157,7 +159,7 @@ def main():
     from sagemaker_tensorflow import PipeModeDataset
     train_main_ds = PipeModeDataset(channel='train', record_format='TFRecord')
 
-    train_main_ds = prepare_for_training(train_main_ds)
+    train_main_ds = prepare_for_training(train_main_ds, shuffle_buffer_size=BUFFER_SIZE)
     steps_per_epoch = np.ceil(TRAIN_IMAGE_COUNT / BATCH_SIZE)
 
     valid_main_ds = PipeModeDataset(channel='valid', record_format='TFRecord')
